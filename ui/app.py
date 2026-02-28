@@ -334,7 +334,18 @@ st.markdown("""
 
 from api.auth import user_id_from_email, load_user_profile, save_user_profile, decode_vin
 
-if not st.user.is_logged_in:
+# Debug: show Streamlit version and auth state
+_st_version = st.__version__
+
+try:
+    _is_logged_in = st.user.is_logged_in
+except Exception as _auth_err:
+    st.error(f"Auth check failed (Streamlit {_st_version}): {_auth_err}")
+    st.info("This may mean your `[auth]` secrets are not configured correctly.")
+    st.code(f"st.user type: {type(getattr(st, 'user', 'MISSING'))}")
+    st.stop()
+
+if not _is_logged_in:
     # --- Landing page for unauthenticated users ---
     st.markdown("""
     <div class="forum-header">
@@ -370,8 +381,29 @@ if not st.user.is_logged_in:
     st.stop()
 
 # --- User is authenticated ---
-user_email = st.user.get("email", "")
-display_name = st.user.get("name", user_email)
+try:
+    _user_dict = st.user.to_dict()
+    user_email = _user_dict.get("email", "")
+    display_name = _user_dict.get("name", user_email)
+except Exception as _ue:
+    # Fallback: try direct access
+    try:
+        user_email = st.user["email"]
+        display_name = st.user.get("name", user_email)
+    except Exception as _ue2:
+        st.error(f"Could not read user info after login: {_ue2}")
+        st.code(f"st.user = {st.user}\ntype = {type(st.user)}")
+        if st.button("Sign out and try again"):
+            st.logout()
+        st.stop()
+
+if not user_email:
+    st.warning("Logged in but no email found. Please sign out and try again.")
+    st.code(f"st.user = {st.user.to_dict() if hasattr(st.user, 'to_dict') else str(st.user)}")
+    if st.button("Sign out"):
+        st.logout()
+    st.stop()
+
 user_id = user_id_from_email(user_email)
 
 
