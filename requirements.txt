@@ -1,0 +1,17 @@
+# Web UI
+streamlit>=1.28.0
+
+# Embeddings (query-time)
+sentence-transformers>=2.2.0
+
+# Vector DB
+pinecone>=5.0.0
+
+# AI / Chat
+anthropic>=0.39.0
+
+# Chat persistence (AWS S3)
+boto3>=1.34.0
+
+# Utilities
+python-dotenv>=1.0.0
