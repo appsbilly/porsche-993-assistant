@@ -1,7 +1,7 @@
 """
 Streamlit web UI for the Porsche 993 Repair Assistant.
 Uses Pinecone for vector search, Claude for answer generation,
-S3 for persistent conversation history, and streamlit-authenticator for login.
+S3 for persistent conversation history, and Google login via st.login().
 
 Run with: streamlit run ui/app.py
 """
@@ -44,7 +44,6 @@ st.markdown("""
         font-family: Verdana, Arial, Helvetica, sans-serif !important;
         font-size: 0.9em !important;
     }
-    /* Text color — scoped to avoid overriding button internals */
     .main [data-testid="stMarkdownContainer"],
     .main [data-testid="stMarkdownContainer"] p,
     .main [data-testid="stMarkdownContainer"] li {
@@ -53,12 +52,10 @@ st.markdown("""
     [data-testid="stChatInputTextArea"] {
         color: #333333 !important;
     }
-    /* Force white text inside primary buttons (New Chat) */
     [data-testid="stBaseButton-primary"] [data-testid="stMarkdownContainer"],
     [data-testid="stBaseButton-primary"] [data-testid="stMarkdownContainer"] p {
         color: #FFFFFF !important;
     }
-    /* Sidebar buttons inherit parent color */
     section[data-testid="stSidebar"] button [data-testid="stMarkdownContainer"],
     section[data-testid="stSidebar"] button [data-testid="stMarkdownContainer"] p {
         color: inherit !important;
@@ -83,10 +80,7 @@ st.markdown("""
         border-bottom: 1px solid rgba(255,207,135,0.2);
         font-family: Tahoma, Verdana, sans-serif;
     }
-    .forum-topbar a {
-        color: #FFCF87 !important;
-        text-decoration: none;
-    }
+    .forum-topbar a { color: #FFCF87 !important; text-decoration: none; }
     .forum-banner-content {
         padding: 18px 24px 14px;
         text-align: center;
@@ -139,12 +133,10 @@ st.markdown("""
     [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] li {
         color: #333333 !important;
     }
-    /* User messages — navy left border */
     [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
         border-left: 3px solid #0B198C !important;
         background: #F0F0F5 !important;
     }
-    /* Assistant messages — gold left border */
     [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
         border-left: 3px solid #FFBF67 !important;
         background: #F7F7F7 !important;
@@ -162,7 +154,6 @@ st.markdown("""
     section[data-testid="stSidebar"] > div {
         background-color: #F0F1F3 !important;
     }
-    /* Sidebar "New Chat" primary button */
     section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"],
     section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] div,
     section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] p,
@@ -174,7 +165,6 @@ st.markdown("""
     section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"]:hover {
         background-color: #0e1fa8 !important;
     }
-    /* Sidebar conversation buttons */
     section[data-testid="stSidebar"] .stButton > button {
         text-align: left;
         font-size: 0.8em;
@@ -188,7 +178,6 @@ st.markdown("""
         background: rgba(11, 25, 140, 0.08);
         color: #0B198C;
     }
-    /* Sidebar date group captions */
     section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
         color: #0B198C !important;
         font-size: 0.7em;
@@ -197,7 +186,7 @@ st.markdown("""
         font-weight: bold;
     }
 
-    /* --- ··· popover trigger (plain text, no box) --- */
+    /* --- Popover trigger --- */
     section[data-testid="stSidebar"] [data-testid="stPopover"] > button,
     section[data-testid="stSidebar"] button:has([data-testid="stIconMaterial"]) {
         border: none !important;
@@ -213,11 +202,9 @@ st.markdown("""
         color: #0B198C !important;
         background: transparent !important;
     }
-    /* Hide dropdown arrow icon */
     section[data-testid="stSidebar"] [data-testid="stIconMaterial"] {
         display: none !important;
     }
-    /* Remove popover container box/border — target the wrapper div around the button */
     section[data-testid="stSidebar"] [data-testid="stPopover"],
     section[data-testid="stSidebar"] [data-testid="stPopover"] > div {
         border: none !important;
@@ -225,7 +212,6 @@ st.markdown("""
         box-shadow: none !important;
         padding: 0 !important;
     }
-    /* Popover dropdown panel — override ALL inner divs */
     [data-testid="stPopoverBody"],
     [data-testid="stPopoverBody"] > div,
     [data-testid="stPopoverBody"] div {
@@ -238,19 +224,12 @@ st.markdown("""
         padding: 2px 0 !important;
         min-width: 0 !important;
     }
-    /* Tighten popover inner container */
     [data-testid="stPopoverBody"] > div {
         padding: 2px 4px !important;
         gap: 0 !important;
     }
-    [data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {
-        gap: 0 !important;
-    }
-    [data-testid="stPopoverBody"] [data-testid="stElementContainer"] {
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    /* Rename/Delete buttons inside popover — compact */
+    [data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] { gap: 0 !important; }
+    [data-testid="stPopoverBody"] [data-testid="stElementContainer"] { margin: 0 !important; padding: 0 !important; }
     [data-testid="stPopoverBody"] button {
         color: #333333 !important;
         background: transparent !important;
@@ -284,7 +263,7 @@ st.markdown("""
         box-shadow: 0 0 0 1px #0B198C !important;
     }
 
-    /* --- Sidebar car info at bottom --- */
+    /* --- Sidebar car info --- */
     .sidebar-car-info {
         background: linear-gradient(180deg, #0B198C, #07104a);
         border: 1px solid #DEDFDF;
@@ -293,155 +272,70 @@ st.markdown("""
         font-size: 0.75em;
         color: #d0d4dc;
     }
-    .sidebar-car-info strong {
-        color: #FFCF87;
-    }
+    .sidebar-car-info strong { color: #FFCF87; }
     .sidebar-sources {
         color: #a0a8b8;
         font-size: 0.9em;
         margin-top: 6px;
     }
 
-    /* --- Spinner/loading --- */
-    [data-testid="stSpinner"] {
-        color: #0B198C !important;
-    }
+    /* --- Spinner --- */
+    [data-testid="stSpinner"] { color: #0B198C !important; }
 
-    /* --- Horizontal rules in chat (source dividers) --- */
-    [data-testid="stChatMessage"] hr {
-        border-color: #DEDFDF !important;
-    }
+    /* --- Chat hr / bold --- */
+    [data-testid="stChatMessage"] hr { border-color: #DEDFDF !important; }
+    [data-testid="stChatMessage"] strong { color: #0B198C !important; }
 
-    /* --- Strong/bold text in chat --- */
-    [data-testid="stChatMessage"] strong {
-        color: #0B198C !important;
-    }
+    /* --- Header / bottom / main bg fixes --- */
+    header[data-testid="stHeader"] { background-color: #FFFFFF !important; }
+    [data-testid="stBottomBlockContainer"] { background-color: #FFFFFF !important; }
+    [data-testid="stBottom"] > div { background-color: #FFFFFF !important; }
+    .stChatInput, .stChatInput > div, .stChatInput > div > div,
+    .stChatInput > div > div > div, .stChatInput div { background-color: #FFFFFF !important; }
+    .stChatInput textarea { background-color: #FFFFFF !important; color: #333333 !important; }
+    .stChatInput { border: 1px solid #DEDFDF !important; border-radius: 8px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important; }
+    .stChatInput:focus-within { border-color: #0B198C !important; box-shadow: 0 0 0 1px #0B198C !important; }
+    .stChatInput button { background-color: #0B198C !important; color: #FFFFFF !important; }
+    .stChatInput button:hover { background-color: #0e1fa8 !important; }
+    .stChatInput button svg { fill: #FFFFFF !important; color: #FFFFFF !important; }
+    .main .block-container { background-color: #FFFFFF !important; }
+    [data-testid="stMainBlockContainer"] { background-color: #FFFFFF !important; }
+    .stApp > div, .stApp > div > div { background-color: transparent !important; }
+    [data-testid="stPopover"] > div { background-color: #FFFFFF !important; border: 1px solid #DEDFDF !important; }
 
-    /* --- Streamlit header bar override --- */
-    header[data-testid="stHeader"] {
-        background-color: #FFFFFF !important;
-    }
-
-    /* --- Bottom block (below chat input) --- */
-    [data-testid="stBottomBlockContainer"] {
-        background-color: #FFFFFF !important;
-    }
-
-    /* --- Fix dark Streamlit bottom wrapper --- */
-    [data-testid="stBottom"] > div {
-        background-color: #FFFFFF !important;
-    }
-
-    /* --- Chat input — override ALL dark internals --- */
-    .stChatInput,
-    .stChatInput > div,
-    .stChatInput > div > div,
-    .stChatInput > div > div > div,
-    .stChatInput div {
-        background-color: #FFFFFF !important;
-    }
-    .stChatInput textarea {
-        background-color: #FFFFFF !important;
-        color: #333333 !important;
-    }
-    /* Chat input outer border */
-    .stChatInput {
-        border: 1px solid #DEDFDF !important;
-        border-radius: 8px !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
-    }
-    .stChatInput:focus-within {
-        border-color: #0B198C !important;
-        box-shadow: 0 0 0 1px #0B198C !important;
-    }
-    /* Send button */
-    .stChatInput button {
-        background-color: #0B198C !important;
-        color: #FFFFFF !important;
-    }
-    .stChatInput button:hover {
-        background-color: #0e1fa8 !important;
-    }
-    .stChatInput button svg {
-        fill: #FFFFFF !important;
-        color: #FFFFFF !important;
-    }
-
-    /* --- Streamlit main content area --- */
-    .main .block-container {
-        background-color: #FFFFFF !important;
-    }
-    [data-testid="stMainBlockContainer"] {
-        background-color: #FFFFFF !important;
-    }
-
-    /* --- Fix any remaining dark backgrounds from Streamlit internals --- */
-    .stApp > div,
-    .stApp > div > div {
-        background-color: transparent !important;
-    }
-
-    /* --- Popover menu styling (light) --- */
-    [data-testid="stPopover"] > div {
-        background-color: #FFFFFF !important;
-        border: 1px solid #DEDFDF !important;
-    }
-
-    /* --- Onboarding form --- */
-    .onboarding-container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 24px;
-    }
-    .onboarding-container h2 {
+    /* --- Google login button styling --- */
+    .google-login-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #FFFFFF;
+        border: 2px solid #0B198C;
+        border-radius: 6px;
+        padding: 12px 28px;
+        font-size: 1.05em;
+        font-family: Verdana, Arial, sans-serif;
         color: #0B198C;
-        margin-bottom: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-top: 12px;
+        transition: all 0.15s;
     }
-    .onboarding-container p.subtitle {
-        color: #666;
-        font-size: 0.85em;
-        margin-bottom: 20px;
-    }
-
-    /* --- Login page --- */
-    .login-container {
-        max-width: 400px;
-        margin: 40px auto;
-        padding: 30px;
-        background: #F7F7F7;
-        border: 1px solid #DEDFDF;
-        border-radius: 8px;
+    .google-login-btn:hover {
+        background: #0B198C;
+        color: #FFFFFF;
     }
 </style>
 """, unsafe_allow_html=True)
 
 
 # ======================================================================
-# AUTHENTICATION
+# AUTHENTICATION — Google Login via st.login()
 # ======================================================================
 
-import streamlit_authenticator as stauth
-from api.auth import load_credentials, save_credentials
+from api.auth import user_id_from_email, load_user_profile, save_user_profile, decode_vin
 
-# Load credentials from S3
-config = load_credentials()
-
-authenticator = stauth.Authenticate(
-    config["credentials"],
-    config["cookie"]["name"],
-    config["cookie"]["key"],
-    config["cookie"]["expiry_days"],
-)
-
-# Render login widget
-try:
-    authenticator.login()
-except Exception:
-    pass
-
-# Check authentication status
-if st.session_state.get("authentication_status") is None:
-    # Not logged in — show login prompt
+if not st.user.is_logged_in:
+    # --- Landing page for unauthenticated users ---
     st.markdown("""
     <div class="forum-header">
         <div class="forum-topbar">
@@ -457,55 +351,36 @@ if st.session_state.get("authentication_status") is None:
         <div class="forum-gold-bar"></div>
     </div>
     """, unsafe_allow_html=True)
-    st.info("Please **log in** or **register** to use the 993 Repair Assistant.")
 
-    # Registration form
-    with st.expander("New here? Create an account"):
-        try:
-            email, username, name = authenticator.register_user(pre_authorization=False)
-            if email:
-                save_credentials({
-                    "credentials": config["credentials"],
-                    "cookie": config["cookie"],
-                })
-                st.success("Account created! Please log in above.")
-                st.rerun()
-        except Exception as e:
-            st.error(str(e))
+    st.markdown("")
+    st.markdown("#### Welcome to the 993 Repair Assistant")
+    st.markdown(
+        "Get expert repair advice for your Porsche 993, powered by **140,000+ real forum posts** "
+        "from Pelican Parts, Rennlist, 911uk, and more."
+    )
+    st.markdown("")
 
-    st.stop()
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🔐  Sign in with Google", use_container_width=True, type="primary"):
+            st.login()
 
-elif st.session_state.get("authentication_status") is False:
-    st.error("Username or password is incorrect.")
-
-    with st.expander("New here? Create an account"):
-        try:
-            email, username, name = authenticator.register_user(pre_authorization=False)
-            if email:
-                save_credentials({
-                    "credentials": config["credentials"],
-                    "cookie": config["cookie"],
-                })
-                st.success("Account created! Please log in above.")
-                st.rerun()
-        except Exception as e:
-            st.error(str(e))
-
+    st.markdown("")
+    st.caption("Sign in to save your chat history and personalize advice to your car.")
     st.stop()
 
 # --- User is authenticated ---
-username = st.session_state["username"]
-display_name = st.session_state.get("name", username)
+user_email = st.user.get("email", "")
+display_name = st.user.get("name", user_email)
+user_id = user_id_from_email(user_email)
 
 
 # ======================================================================
 # CAR PROFILE ONBOARDING
 # ======================================================================
 
-from api.auth import load_user_profile, save_user_profile, decode_vin
-
 if "car_profile" not in st.session_state:
-    profile = load_user_profile(username)
+    profile = load_user_profile(user_id)
     st.session_state.car_profile = profile  # None if first visit
 
 
@@ -527,10 +402,11 @@ def _show_onboarding():
     </div>
     """, unsafe_allow_html=True)
 
+    st.markdown(f"Welcome, **{display_name}**! Let's set up your car profile.")
+
     with st.form("car_profile_form"):
         st.subheader("Your Car Details")
 
-        # VIN with auto-decode
         vin = st.text_input(
             "VIN (optional — auto-fills fields below)",
             max_chars=17,
@@ -570,7 +446,6 @@ def _show_onboarding():
         submitted = st.form_submit_button("Save & Start Chatting", type="primary", use_container_width=True)
 
         if submitted:
-            # Try VIN decode if provided
             if vin and len(vin) == 17:
                 decoded = decode_vin(vin)
                 if decoded:
@@ -591,7 +466,7 @@ def _show_onboarding():
                 "mileage": mileage.strip(),
                 "known_issues": known_issues.strip(),
             }
-            save_user_profile(username, profile)
+            save_user_profile(user_id, profile)
             st.session_state.car_profile = profile
             return True
 
@@ -599,7 +474,7 @@ def _show_onboarding():
 
 
 def _show_edit_profile():
-    """Show edit profile form in a dialog. Returns True if saved."""
+    """Show edit profile form inline."""
     profile = st.session_state.car_profile or {}
 
     with st.form("edit_profile_form"):
@@ -644,7 +519,7 @@ def _show_edit_profile():
                 "mileage": mileage.strip(),
                 "known_issues": known_issues.strip(),
             }
-            save_user_profile(username, updated)
+            save_user_profile(user_id, updated)
             st.session_state.car_profile = updated
             st.session_state.show_edit_profile = False
             st.rerun()
@@ -675,10 +550,8 @@ def connect_pinecone():
 try:
     index, chunk_count = connect_pinecone()
 except Exception as e:
-    st.error(f"❌ Could not connect to Pinecone: {e}")
-    st.info("Make sure you've:\n"
-            "1. Set `PINECONE_API_KEY` in your `.env` file\n"
-            "2. Run the pipeline: `python embeddings/build_db.py`")
+    st.error(f"Could not connect to Pinecone: {e}")
+    st.info("Make sure PINECONE_API_KEY is set in secrets.")
     st.stop()
 
 
@@ -691,10 +564,8 @@ from api.chat_store import (
     generate_title, new_conversation_id, delete_conversation,
 )
 
-
-# --- Session State Init ---
 if "conv_index" not in st.session_state:
-    st.session_state.conv_index = load_index(user_id=username)
+    st.session_state.conv_index = load_index(user_id=user_id)
 if "current_conv_id" not in st.session_state:
     st.session_state.current_conv_id = None
 if "messages" not in st.session_state:
@@ -712,7 +583,6 @@ if "show_edit_profile" not in st.session_state:
 # ======================================================================
 
 with st.sidebar:
-    # New Chat button
     if st.button("＋ New Chat", use_container_width=True, type="primary"):
         st.session_state.current_conv_id = None
         st.session_state.messages = []
@@ -720,7 +590,6 @@ with st.sidebar:
 
     st.divider()
 
-    # Group conversations by date
     today = datetime.now().date()
     yesterday = today - timedelta(days=1)
     week_ago = today - timedelta(days=7)
@@ -755,14 +624,13 @@ with st.sidebar:
             is_active = conv_id == st.session_state.current_conv_id
             title = conv.get("title", "Untitled")
 
-            # --- Delete confirmation mode ---
             if st.session_state.confirm_delete == conv_id:
                 st.warning(f"Delete **{title}**?", icon="⚠️")
                 dc1, dc2 = st.columns(2)
                 with dc1:
                     if st.button("Yes, delete", key=f"yes_{conv_id}", use_container_width=True):
                         st.session_state.conv_index = delete_conversation(
-                            conv_id, st.session_state.conv_index, user_id=username
+                            conv_id, st.session_state.conv_index, user_id=user_id
                         )
                         if st.session_state.current_conv_id == conv_id:
                             st.session_state.current_conv_id = None
@@ -775,13 +643,10 @@ with st.sidebar:
                         st.rerun()
                 continue
 
-            # --- Rename mode ---
             if st.session_state.editing_conv_id == conv_id:
                 new_title = st.text_input(
-                    "Rename",
-                    value=title,
-                    key=f"rename_{conv_id}",
-                    label_visibility="collapsed",
+                    "Rename", value=title,
+                    key=f"rename_{conv_id}", label_visibility="collapsed",
                 )
                 rc1, rc2 = st.columns(2)
                 with rc1:
@@ -791,7 +656,7 @@ with st.sidebar:
                                 if c["id"] == conv_id:
                                     c["title"] = new_title.strip()
                                     break
-                            save_index(st.session_state.conv_index, user_id=username)
+                            save_index(st.session_state.conv_index, user_id=user_id)
                         st.session_state.editing_conv_id = None
                         st.rerun()
                 with rc2:
@@ -800,17 +665,12 @@ with st.sidebar:
                         st.rerun()
                 continue
 
-            # --- Normal conversation row ---
             cols = st.columns([5, 1])
             with cols[0]:
                 btn_label = f"{'▸ ' if is_active else '  '}{title}"
-                if st.button(
-                    btn_label,
-                    key=f"conv_{conv_id}",
-                    use_container_width=True,
-                    disabled=is_active,
-                ):
-                    loaded = load_conversation(conv_id, user_id=username)
+                if st.button(btn_label, key=f"conv_{conv_id}",
+                             use_container_width=True, disabled=is_active):
+                    loaded = load_conversation(conv_id, user_id=user_id)
                     if loaded is not None:
                         st.session_state.current_conv_id = conv_id
                         st.session_state.messages = loaded
@@ -830,14 +690,14 @@ with st.sidebar:
     if conversations:
         st.divider()
 
-    # --- Edit Profile button ---
+    # Edit profile
     if st.button("✏️ Edit Car Profile", use_container_width=True):
         st.session_state.show_edit_profile = not st.session_state.show_edit_profile
         st.rerun()
 
     st.divider()
 
-    # --- Car info footer (dynamic from profile) ---
+    # Car info footer
     car_year = car_profile.get("year", "")
     car_model = car_profile.get("model", "993")
     car_trans = car_profile.get("transmission", "")
@@ -864,9 +724,10 @@ with st.sidebar:
 
     st.divider()
 
-    # --- Logout + user info ---
-    st.caption(f"Logged in as **{display_name}**")
-    authenticator.logout("Logout", "sidebar")
+    # User info + logout
+    st.caption(f"Signed in as **{display_name}**")
+    if st.button("Sign out"):
+        st.logout()
 
 
 # ======================================================================
@@ -882,7 +743,6 @@ if st.session_state.show_edit_profile:
 # MAIN CHAT AREA
 # ======================================================================
 
-# --- Forum Banner Header ---
 car_badge = f"{car_profile.get('year', '')} {car_profile.get('model', '')} {car_profile.get('transmission', '')}"
 if car_profile.get("mileage"):
     car_badge += f" &middot; ~{car_profile['mileage']} mi"
@@ -906,54 +766,34 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-
-# --- Display chat history ---
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-
-# --- Chat input ---
 if prompt := st.chat_input("Ask about your 993..."):
-    # Show user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Generate response
     with st.chat_message("assistant"):
         with st.spinner("Searching forum knowledge..."):
             from api.chat import (
                 search, build_context, build_system_prompt,
                 extract_part_numbers, generate_parts_links,
+                _car_description,
             )
             import anthropic
 
-            # Search Pinecone
             sources = search(prompt)
-
-            # Build RAG context
             context = build_context(sources)
-
-            # Build the dynamic system prompt from user's car profile
             system_prompt = build_system_prompt(car_profile)
-
-            # Build car description for the user message
-            from api.chat import _car_description
             car_desc = _car_description(car_profile)
 
-            # Build messages with conversation history for continuity.
-            # Send up to the last 10 messages (5 Q&A pairs) so Claude
-            # remembers what was discussed, without blowing up tokens.
             previous = st.session_state.messages[-11:-1]
-            claude_messages = []
-            for msg in previous:
-                claude_messages.append({
-                    "role": msg["role"],
-                    "content": msg["content"],
-                })
+            claude_messages = [
+                {"role": m["role"], "content": m["content"]} for m in previous
+            ]
 
-            # Current message with RAG context attached
             user_message = f"""Based on the following knowledge from Porsche forums and technical articles,
 answer this question about the owner's {car_desc}:
 
@@ -968,12 +808,11 @@ Please provide a helpful, practical answer based on this knowledge."""
 
             api_key = os.getenv("ANTHROPIC_API_KEY")
             if not api_key or api_key == "your_anthropic_api_key_here":
-                st.error("⚠️ Please set ANTHROPIC_API_KEY in your .env file")
+                st.error("Please set ANTHROPIC_API_KEY in secrets.")
                 st.stop()
 
             client = anthropic.Anthropic(api_key=api_key)
 
-            # Stream the response
             with client.messages.stream(
                 model="claude-sonnet-4-20250514",
                 max_tokens=2000,
@@ -984,7 +823,7 @@ Please provide a helpful, practical answer based on this knowledge."""
                     (text for text in stream.text_stream)
                 )
 
-            # Build source links to include in the saved message
+            # Source links
             unique_urls = []
             seen = set()
             for s in sources[:5]:
@@ -999,41 +838,32 @@ Please provide a helpful, practical answer based on this knowledge."""
                     f"- [{t}]({u}) *({s})*" for t, u, s in unique_urls
                 )
 
-            # Build parts links from the response
+            # Parts links
             response_text = response if isinstance(response, str) else str(response)
             part_numbers = extract_part_numbers(response_text)
             parts_md = generate_parts_links(part_numbers)
 
-    # Save assistant response + sources + parts to session state
     full_response = response_text + source_md + parts_md
     st.session_state.messages.append({
         "role": "assistant",
         "content": full_response,
     })
 
-    # --- Persist conversation to S3 (per-user) ---
     now = datetime.now().isoformat()
-
     if st.session_state.current_conv_id is None:
-        # First message in a new conversation — generate a title
         conv_id = new_conversation_id()
         st.session_state.current_conv_id = conv_id
         title = generate_title(prompt)
         st.session_state.conv_index.append({
-            "id": conv_id,
-            "title": title,
-            "created_at": now,
-            "updated_at": now,
+            "id": conv_id, "title": title,
+            "created_at": now, "updated_at": now,
         })
     else:
-        # Existing conversation — just update the timestamp
         for conv in st.session_state.conv_index:
             if conv["id"] == st.session_state.current_conv_id:
                 conv["updated_at"] = now
                 break
 
-    save_index(st.session_state.conv_index, user_id=username)
-    save_conversation(st.session_state.current_conv_id, st.session_state.messages, user_id=username)
-
-    # Rerun so the sidebar updates with the new/updated conversation
+    save_index(st.session_state.conv_index, user_id=user_id)
+    save_conversation(st.session_state.current_conv_id, st.session_state.messages, user_id=user_id)
     st.rerun()
