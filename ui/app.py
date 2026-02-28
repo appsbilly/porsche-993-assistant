@@ -1,12 +1,13 @@
 """
 Streamlit web UI for the Porsche 993 Repair Assistant.
 Uses Pinecone for vector search, Claude for answer generation,
-and S3 for persistent conversation history.
+S3 for persistent conversation history, and streamlit-authenticator for login.
 
 Run with: streamlit run ui/app.py
 """
 
 import os
+import re
 import sys
 import streamlit as st
 from pathlib import Path
@@ -385,23 +386,294 @@ st.markdown("""
         background-color: #FFFFFF !important;
         border: 1px solid #DEDFDF !important;
     }
+
+    /* --- Onboarding form --- */
+    .onboarding-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+    .onboarding-container h2 {
+        color: #0B198C;
+        margin-bottom: 4px;
+    }
+    .onboarding-container p.subtitle {
+        color: #666;
+        font-size: 0.85em;
+        margin-bottom: 20px;
+    }
+
+    /* --- Login page --- */
+    .login-container {
+        max-width: 400px;
+        margin: 40px auto;
+        padding: 30px;
+        background: #F7F7F7;
+        border: 1px solid #DEDFDF;
+        border-radius: 8px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 
+# ======================================================================
+# AUTHENTICATION
+# ======================================================================
+
+import streamlit_authenticator as stauth
+from api.auth import load_credentials, save_credentials
+
+# Load credentials from S3
+config = load_credentials()
+
+authenticator = stauth.Authenticate(
+    config["credentials"],
+    config["cookie"]["name"],
+    config["cookie"]["key"],
+    config["cookie"]["expiry_days"],
+)
+
+# Render login widget
+try:
+    authenticator.login()
+except Exception:
+    pass
+
+# Check authentication status
+if st.session_state.get("authentication_status") is None:
+    # Not logged in — show login prompt
+    st.markdown("""
+    <div class="forum-header">
+        <div class="forum-topbar">
+            Porsche Forums &rsaquo; 993 Technical &rsaquo; Knowledge Base
+        </div>
+        <div class="forum-banner-content">
+            <h1>&#x1F527; 993 Repair Assistant</h1>
+            <div class="forum-divider"></div>
+            <p class="forum-subtitle">
+                Powered by real Porsche forum knowledge
+            </p>
+        </div>
+        <div class="forum-gold-bar"></div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.info("Please **log in** or **register** to use the 993 Repair Assistant.")
+
+    # Registration form
+    with st.expander("New here? Create an account"):
+        try:
+            email, username, name = authenticator.register_user(pre_authorization=False)
+            if email:
+                save_credentials({
+                    "credentials": config["credentials"],
+                    "cookie": config["cookie"],
+                })
+                st.success("Account created! Please log in above.")
+                st.rerun()
+        except Exception as e:
+            st.error(str(e))
+
+    st.stop()
+
+elif st.session_state.get("authentication_status") is False:
+    st.error("Username or password is incorrect.")
+
+    with st.expander("New here? Create an account"):
+        try:
+            email, username, name = authenticator.register_user(pre_authorization=False)
+            if email:
+                save_credentials({
+                    "credentials": config["credentials"],
+                    "cookie": config["cookie"],
+                })
+                st.success("Account created! Please log in above.")
+                st.rerun()
+        except Exception as e:
+            st.error(str(e))
+
+    st.stop()
+
+# --- User is authenticated ---
+username = st.session_state["username"]
+display_name = st.session_state.get("name", username)
+
+
+# ======================================================================
+# CAR PROFILE ONBOARDING
+# ======================================================================
+
+from api.auth import load_user_profile, save_user_profile, decode_vin
+
+if "car_profile" not in st.session_state:
+    profile = load_user_profile(username)
+    st.session_state.car_profile = profile  # None if first visit
+
+
+def _show_onboarding():
+    """Show the car profile onboarding form. Returns True if completed."""
+    st.markdown("""
+    <div class="forum-header">
+        <div class="forum-topbar">
+            Porsche Forums &rsaquo; 993 Technical &rsaquo; Setup
+        </div>
+        <div class="forum-banner-content">
+            <h1>&#x1F3CE; Tell us about your 993</h1>
+            <div class="forum-divider"></div>
+            <p class="forum-subtitle">
+                We'll personalize all advice to your specific car
+            </p>
+        </div>
+        <div class="forum-gold-bar"></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    with st.form("car_profile_form"):
+        st.subheader("Your Car Details")
+
+        # VIN with auto-decode
+        vin = st.text_input(
+            "VIN (optional — auto-fills fields below)",
+            max_chars=17,
+            placeholder="WP0CB2960VS320001",
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            year = st.selectbox(
+                "Year",
+                options=[""] + [str(y) for y in range(1998, 1988, -1)],
+                index=0,
+            )
+        with col2:
+            model = st.selectbox(
+                "Model",
+                options=[
+                    "", "Carrera", "Carrera S", "Carrera 4",
+                    "Carrera 4S", "Targa", "Turbo", "Turbo S", "GT2",
+                    "Cabriolet", "Speedster",
+                ],
+                index=0,
+            )
+
+        transmission = st.selectbox(
+            "Transmission",
+            options=["", "Manual (G50)", "Tiptronic"],
+            index=0,
+        )
+        mileage = st.text_input("Approximate Mileage", placeholder="80,000")
+        known_issues = st.text_area(
+            "Known Issues (optional)",
+            placeholder="e.g. Oil leak from RMS, soft top motor slow, AC needs recharge...",
+            height=100,
+        )
+
+        submitted = st.form_submit_button("Save & Start Chatting", type="primary", use_container_width=True)
+
+        if submitted:
+            # Try VIN decode if provided
+            if vin and len(vin) == 17:
+                decoded = decode_vin(vin)
+                if decoded:
+                    if not year and decoded.get("year"):
+                        year = decoded["year"]
+                    if not model and decoded.get("model"):
+                        model = decoded["model"]
+
+            if not year or not model:
+                st.error("Please at least select the year and model of your 993.")
+                return False
+
+            profile = {
+                "vin": vin.strip() if vin else "",
+                "year": year,
+                "model": model,
+                "transmission": transmission,
+                "mileage": mileage.strip(),
+                "known_issues": known_issues.strip(),
+            }
+            save_user_profile(username, profile)
+            st.session_state.car_profile = profile
+            return True
+
+    return False
+
+
+def _show_edit_profile():
+    """Show edit profile form in a dialog. Returns True if saved."""
+    profile = st.session_state.car_profile or {}
+
+    with st.form("edit_profile_form"):
+        st.subheader("Edit Car Profile")
+
+        vin = st.text_input("VIN (optional)", value=profile.get("vin", ""), max_chars=17)
+
+        col1, col2 = st.columns(2)
+        years_list = [""] + [str(y) for y in range(1998, 1988, -1)]
+        models_list = [
+            "", "Carrera", "Carrera S", "Carrera 4",
+            "Carrera 4S", "Targa", "Turbo", "Turbo S", "GT2",
+            "Cabriolet", "Speedster",
+        ]
+        with col1:
+            curr_year = profile.get("year", "")
+            year_idx = years_list.index(curr_year) if curr_year in years_list else 0
+            year = st.selectbox("Year", options=years_list, index=year_idx)
+        with col2:
+            curr_model = profile.get("model", "")
+            model_idx = models_list.index(curr_model) if curr_model in models_list else 0
+            model = st.selectbox("Model", options=models_list, index=model_idx)
+
+        trans_list = ["", "Manual (G50)", "Tiptronic"]
+        curr_trans = profile.get("transmission", "")
+        trans_idx = trans_list.index(curr_trans) if curr_trans in trans_list else 0
+        transmission = st.selectbox("Transmission", options=trans_list, index=trans_idx)
+
+        mileage = st.text_input("Approximate Mileage", value=profile.get("mileage", ""))
+        known_issues = st.text_area(
+            "Known Issues",
+            value=profile.get("known_issues", ""),
+            height=100,
+        )
+
+        if st.form_submit_button("Save Changes", type="primary", use_container_width=True):
+            updated = {
+                "vin": vin.strip(),
+                "year": year,
+                "model": model,
+                "transmission": transmission,
+                "mileage": mileage.strip(),
+                "known_issues": known_issues.strip(),
+            }
+            save_user_profile(username, updated)
+            st.session_state.car_profile = updated
+            st.session_state.show_edit_profile = False
+            st.rerun()
+
+
+# If no profile yet, show onboarding and stop
+if st.session_state.car_profile is None:
+    if _show_onboarding():
+        st.rerun()
+    st.stop()
+
+car_profile = st.session_state.car_profile
+
+
+# ======================================================================
+# CONNECT TO PINECONE (fast — no PyTorch)
+# ======================================================================
+
 @st.cache_resource
 def connect_pinecone():
-    """Connect to Pinecone and load embedding model (cached)."""
-    from api.chat import _get_index, _get_model
+    """Connect to Pinecone index (cached). No model loading needed."""
+    from api.chat import _get_index
     index = _get_index()
-    model = _get_model()
     stats = index.describe_index_stats()
-    return index, model, stats.total_vector_count
+    return index, stats.total_vector_count
 
 
-# --- Connect to Pinecone ---
 try:
-    index, embed_model, chunk_count = connect_pinecone()
+    index, chunk_count = connect_pinecone()
 except Exception as e:
     st.error(f"❌ Could not connect to Pinecone: {e}")
     st.info("Make sure you've:\n"
@@ -410,7 +682,10 @@ except Exception as e:
     st.stop()
 
 
-# --- Chat Store ---
+# ======================================================================
+# CHAT STORE (per-user)
+# ======================================================================
+
 from api.chat_store import (
     load_index, save_index, load_conversation, save_conversation,
     generate_title, new_conversation_id, delete_conversation,
@@ -419,7 +694,7 @@ from api.chat_store import (
 
 # --- Session State Init ---
 if "conv_index" not in st.session_state:
-    st.session_state.conv_index = load_index()
+    st.session_state.conv_index = load_index(user_id=username)
 if "current_conv_id" not in st.session_state:
     st.session_state.current_conv_id = None
 if "messages" not in st.session_state:
@@ -428,9 +703,14 @@ if "confirm_delete" not in st.session_state:
     st.session_state.confirm_delete = None
 if "editing_conv_id" not in st.session_state:
     st.session_state.editing_conv_id = None
+if "show_edit_profile" not in st.session_state:
+    st.session_state.show_edit_profile = False
 
 
-# --- Sidebar ---
+# ======================================================================
+# SIDEBAR
+# ======================================================================
+
 with st.sidebar:
     # New Chat button
     if st.button("＋ New Chat", use_container_width=True, type="primary"):
@@ -482,7 +762,7 @@ with st.sidebar:
                 with dc1:
                     if st.button("Yes, delete", key=f"yes_{conv_id}", use_container_width=True):
                         st.session_state.conv_index = delete_conversation(
-                            conv_id, st.session_state.conv_index
+                            conv_id, st.session_state.conv_index, user_id=username
                         )
                         if st.session_state.current_conv_id == conv_id:
                             st.session_state.current_conv_id = None
@@ -511,7 +791,7 @@ with st.sidebar:
                                 if c["id"] == conv_id:
                                     c["title"] = new_title.strip()
                                     break
-                            save_index(st.session_state.conv_index)
+                            save_index(st.session_state.conv_index, user_id=username)
                         st.session_state.editing_conv_id = None
                         st.rerun()
                 with rc2:
@@ -530,7 +810,7 @@ with st.sidebar:
                     use_container_width=True,
                     disabled=is_active,
                 ):
-                    loaded = load_conversation(conv_id)
+                    loaded = load_conversation(conv_id, user_id=username)
                     if loaded is not None:
                         st.session_state.current_conv_id = conv_id
                         st.session_state.messages = loaded
@@ -550,11 +830,28 @@ with st.sidebar:
     if conversations:
         st.divider()
 
+    # --- Edit Profile button ---
+    if st.button("✏️ Edit Car Profile", use_container_width=True):
+        st.session_state.show_edit_profile = not st.session_state.show_edit_profile
+        st.rerun()
+
     st.divider()
+
+    # --- Car info footer (dynamic from profile) ---
+    car_year = car_profile.get("year", "")
+    car_model = car_profile.get("model", "993")
+    car_trans = car_profile.get("transmission", "")
+    car_miles = car_profile.get("mileage", "")
+    car_line = f"{car_year} 993 {car_model}"
+    if car_trans:
+        car_line += f" {car_trans}"
+    if car_miles:
+        car_line += f" · ~{car_miles} mi"
+
     st.markdown(f"""
     <div class="sidebar-car-info">
         <strong>Your Car</strong><br>
-        1997 993 Targa Tiptronic · ~80k mi<br><br>
+        {car_line}<br><br>
         <strong>Knowledge Base</strong><br>
         {chunk_count:,} forum posts indexed<br>
         <div class="sidebar-sources">
@@ -565,9 +862,32 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
+    st.divider()
+
+    # --- Logout + user info ---
+    st.caption(f"Logged in as **{display_name}**")
+    authenticator.logout("Logout", "sidebar")
+
+
+# ======================================================================
+# EDIT PROFILE (inline, if toggled)
+# ======================================================================
+
+if st.session_state.show_edit_profile:
+    _show_edit_profile()
+    st.stop()
+
+
+# ======================================================================
+# MAIN CHAT AREA
+# ======================================================================
 
 # --- Forum Banner Header ---
-st.markdown("""
+car_badge = f"{car_profile.get('year', '')} {car_profile.get('model', '')} {car_profile.get('transmission', '')}"
+if car_profile.get("mileage"):
+    car_badge += f" &middot; ~{car_profile['mileage']} mi"
+
+st.markdown(f"""
 <div class="forum-header">
     <div class="forum-topbar">
         Porsche Forums &rsaquo; 993 Technical &rsaquo; Knowledge Base
@@ -579,7 +899,7 @@ st.markdown("""
             Powered by real Porsche forum knowledge
         </p>
         <span class="forum-car-badge">
-            1997 Targa Tiptronic &middot; ~80,000 mi
+            {car_badge.strip()}
         </span>
     </div>
     <div class="forum-gold-bar"></div>
@@ -603,7 +923,10 @@ if prompt := st.chat_input("Ask about your 993..."):
     # Generate response
     with st.chat_message("assistant"):
         with st.spinner("Searching forum knowledge..."):
-            from api.chat import search, build_context, SYSTEM_PROMPT
+            from api.chat import (
+                search, build_context, build_system_prompt,
+                extract_part_numbers, generate_parts_links,
+            )
             import anthropic
 
             # Search Pinecone
@@ -611,6 +934,13 @@ if prompt := st.chat_input("Ask about your 993..."):
 
             # Build RAG context
             context = build_context(sources)
+
+            # Build the dynamic system prompt from user's car profile
+            system_prompt = build_system_prompt(car_profile)
+
+            # Build car description for the user message
+            from api.chat import _car_description
+            car_desc = _car_description(car_profile)
 
             # Build messages with conversation history for continuity.
             # Send up to the last 10 messages (5 Q&A pairs) so Claude
@@ -625,7 +955,7 @@ if prompt := st.chat_input("Ask about your 993..."):
 
             # Current message with RAG context attached
             user_message = f"""Based on the following knowledge from Porsche forums and technical articles,
-answer this question about the owner's 1997 Porsche 993 Targa Tiptronic (~80k miles):
+answer this question about the owner's {car_desc}:
 
 QUESTION: {prompt}
 
@@ -647,7 +977,7 @@ Please provide a helpful, practical answer based on this knowledge."""
             with client.messages.stream(
                 model="claude-sonnet-4-20250514",
                 max_tokens=2000,
-                system=SYSTEM_PROMPT,
+                system=system_prompt,
                 messages=claude_messages,
             ) as stream:
                 response = st.write_stream(
@@ -669,15 +999,19 @@ Please provide a helpful, practical answer based on this knowledge."""
                     f"- [{t}]({u}) *({s})*" for t, u, s in unique_urls
                 )
 
-    # Save assistant response + sources to session state
-    response_text = response if isinstance(response, str) else str(response)
-    full_response = response_text + source_md
+            # Build parts links from the response
+            response_text = response if isinstance(response, str) else str(response)
+            part_numbers = extract_part_numbers(response_text)
+            parts_md = generate_parts_links(part_numbers)
+
+    # Save assistant response + sources + parts to session state
+    full_response = response_text + source_md + parts_md
     st.session_state.messages.append({
         "role": "assistant",
         "content": full_response,
     })
 
-    # --- Persist conversation to S3 ---
+    # --- Persist conversation to S3 (per-user) ---
     now = datetime.now().isoformat()
 
     if st.session_state.current_conv_id is None:
@@ -698,8 +1032,8 @@ Please provide a helpful, practical answer based on this knowledge."""
                 conv["updated_at"] = now
                 break
 
-    save_index(st.session_state.conv_index)
-    save_conversation(st.session_state.current_conv_id, st.session_state.messages)
+    save_index(st.session_state.conv_index, user_id=username)
+    save_conversation(st.session_state.current_conv_id, st.session_state.messages, user_id=username)
 
     # Rerun so the sidebar updates with the new/updated conversation
     st.rerun()

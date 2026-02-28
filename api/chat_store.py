@@ -2,8 +2,11 @@
 Chat conversation storage using AWS S3.
 
 Stores conversation history with auto-generated titles.
-Each conversation is a JSON file in s3://bucket/chats/.
-An index.json file tracks all conversations for fast sidebar loading.
+Each user gets their own namespace:
+  users/{user_id}/chats/index.json      — conversation list
+  users/{user_id}/chats/{conv_id}.json  — messages
+
+Falls back to chats/ prefix when no user_id is provided (legacy/CLI).
 """
 
 import os
@@ -31,61 +34,73 @@ def _bucket():
     return os.getenv("AWS_S3_BUCKET", "porsche-993-rag")
 
 
-def load_index() -> list[dict]:
+def _prefix(user_id: str | None = None) -> str:
+    """Return the S3 key prefix for a user's chats."""
+    if user_id:
+        return f"users/{user_id}/chats"
+    return "chats"
+
+
+def load_index(user_id: str | None = None) -> list[dict]:
     """Load conversation index from S3.
 
     Returns list of: {id, title, created_at, updated_at}
     """
     try:
         s3 = _get_s3()
-        resp = s3.get_object(Bucket=_bucket(), Key="chats/index.json")
+        key = f"{_prefix(user_id)}/index.json"
+        resp = s3.get_object(Bucket=_bucket(), Key=key)
         return json.loads(resp["Body"].read().decode())
     except Exception:
         return []
 
 
-def save_index(index: list[dict]):
+def save_index(index: list[dict], user_id: str | None = None):
     """Save conversation index to S3."""
     s3 = _get_s3()
+    key = f"{_prefix(user_id)}/index.json"
     s3.put_object(
         Bucket=_bucket(),
-        Key="chats/index.json",
+        Key=key,
         Body=json.dumps(index, indent=2),
         ContentType="application/json",
     )
 
 
-def load_conversation(conv_id: str) -> list[dict] | None:
+def load_conversation(conv_id: str, user_id: str | None = None) -> list[dict] | None:
     """Load messages for a conversation from S3."""
     try:
         s3 = _get_s3()
-        resp = s3.get_object(Bucket=_bucket(), Key=f"chats/{conv_id}.json")
+        key = f"{_prefix(user_id)}/{conv_id}.json"
+        resp = s3.get_object(Bucket=_bucket(), Key=key)
         data = json.loads(resp["Body"].read().decode())
         return data.get("messages", [])
     except Exception:
         return None
 
 
-def save_conversation(conv_id: str, messages: list[dict]):
+def save_conversation(conv_id: str, messages: list[dict], user_id: str | None = None):
     """Save conversation messages to S3."""
     s3 = _get_s3()
+    key = f"{_prefix(user_id)}/{conv_id}.json"
     s3.put_object(
         Bucket=_bucket(),
-        Key=f"chats/{conv_id}.json",
+        Key=key,
         Body=json.dumps({"id": conv_id, "messages": messages}, indent=2),
         ContentType="application/json",
     )
 
 
-def delete_conversation(conv_id: str, index: list[dict]) -> list[dict]:
+def delete_conversation(conv_id: str, index: list[dict], user_id: str | None = None) -> list[dict]:
     """Delete a conversation from S3 and return updated index."""
     try:
         s3 = _get_s3()
-        s3.delete_object(Bucket=_bucket(), Key=f"chats/{conv_id}.json")
+        key = f"{_prefix(user_id)}/{conv_id}.json"
+        s3.delete_object(Bucket=_bucket(), Key=key)
     except Exception:
         pass
     index = [c for c in index if c["id"] != conv_id]
-    save_index(index)
+    save_index(index, user_id=user_id)
     return index
 
 
