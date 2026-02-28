@@ -373,8 +373,8 @@ if not _is_logged_in:
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("🔐  Sign in with Google", use_container_width=True, type="primary"):
-            st.login()
+        st.button("🔐  Sign in with Google", on_click=st.login,
+                  use_container_width=True, type="primary")
 
     st.markdown("")
     st.caption("Sign in to save your chat history and personalize advice to your car.")
