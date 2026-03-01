@@ -27,180 +27,199 @@ st.set_page_config(
     layout="centered",
 )
 
-# --- Forum Theme CSS (Pelican Parts Light Theme) ---
+# --- Design System CSS ---
+# Tokens:
+#   Spacing base: 4px  |  Scale: 4, 8, 12, 16, 24, 32, 48
+#   Depth: borders-only (no shadows, no gradients on content)
+#   Radius: 6px (controls), 8px (cards), 10px (containers)
+#   Font: system-ui  |  Sizes: 11px labels, 13px body, 15px subhead, 20px title
+#   Palette: slate-900 text, gray-500 secondary, warm-amber accent, deep-slate primary
 st.markdown("""
 <style>
-    /* ====== PELICAN PARTS FORUM THEME — LIGHT ====== */
+    /* ====== DESIGN TOKENS ====== */
+    :root {
+        --fg-primary: #111827;
+        --fg-secondary: #6b7280;
+        --fg-muted: #9ca3af;
+        --fg-faint: #d1d5db;
+        --bg-base: #ffffff;
+        --bg-elevated: #f9fafb;
+        --bg-inset: #f3f4f6;
+        --border-default: rgba(0, 0, 0, 0.08);
+        --border-strong: rgba(0, 0, 0, 0.15);
+        --accent: #1e3a5f;
+        --accent-hover: #2a4d7a;
+        --accent-warm: #c9a96e;
+        --accent-warm-bg: rgba(201, 169, 110, 0.08);
+        --accent-warm-border: rgba(201, 169, 110, 0.25);
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --radius-lg: 10px;
+    }
 
-    /* --- Global --- */
+    /* ====== GLOBAL ====== */
     .stApp {
-        font-family: Verdana, Arial, Helvetica, sans-serif !important;
-        background-color: #FFFFFF !important;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+        background-color: var(--bg-base) !important;
     }
     [data-testid="stMarkdownContainer"],
     [data-testid="stMarkdownContainer"] p,
-    [data-testid="stMarkdownContainer"] li,
-    [data-testid="stChatInputTextArea"] {
-        font-family: Verdana, Arial, Helvetica, sans-serif !important;
-        font-size: 0.9em !important;
+    [data-testid="stMarkdownContainer"] li {
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+        font-size: 14px !important;
+        line-height: 1.6 !important;
+        color: var(--fg-primary) !important;
     }
-    .main [data-testid="stMarkdownContainer"],
-    .main [data-testid="stMarkdownContainer"] p,
-    .main [data-testid="stMarkdownContainer"] li {
-        color: #333333 !important;
+
+    /* ====== HEADER ====== */
+    .app-header {
+        padding: 24px 0 16px 0;
+        border-bottom: 1px solid var(--border-default);
+        margin-bottom: 24px;
     }
-    [data-testid="stChatInputTextArea"] {
-        color: #333333 !important;
+    .app-header h1.app-header-title,
+    .app-header-title {
+        font-size: 22px !important;
+        font-weight: 600 !important;
+        color: var(--fg-primary) !important;
+        letter-spacing: -0.3px !important;
+        margin: 0 0 4px 0 !important;
+        padding: 0 !important;
+        line-height: 1.3 !important;
+    }
+    .app-header-sub {
+        font-size: 13px;
+        color: var(--fg-secondary);
+        margin: 0;
+        line-height: 1.5;
+    }
+    .app-car-tag {
+        display: inline-block;
+        background: var(--accent-warm-bg);
+        border: 1px solid var(--accent-warm-border);
+        border-radius: var(--radius-sm);
+        padding: 4px 12px;
+        margin-top: 10px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #8b6914;
+        letter-spacing: 0.2px;
+    }
+
+    /* ====== SIDEBAR ====== */
+    section[data-testid="stSidebar"] {
+        background-color: var(--bg-elevated) !important;
+        border-right: 1px solid var(--border-default) !important;
+    }
+    section[data-testid="stSidebar"] > div {
+        background-color: var(--bg-elevated) !important;
+        padding-top: 16px !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        gap: 4px !important;
+    }
+
+    /* Sidebar new-chat button */
+    section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"],
+    section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] div,
+    section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] p,
+    section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] span {
+        background-color: var(--accent) !important;
+        border: 1px solid var(--accent) !important;
+        color: #ffffff !important;
+        border-radius: var(--radius-sm) !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"]:hover {
+        background-color: var(--accent-hover) !important;
+        border-color: var(--accent-hover) !important;
     }
     [data-testid="stBaseButton-primary"] [data-testid="stMarkdownContainer"],
     [data-testid="stBaseButton-primary"] [data-testid="stMarkdownContainer"] p {
-        color: #FFFFFF !important;
+        color: #ffffff !important;
     }
+
+    /* Sidebar conversation buttons */
+    section[data-testid="stSidebar"] .stButton > button {
+        text-align: left;
+        font-size: 13px;
+        padding: 8px 12px;
+        border: none;
+        background: transparent;
+        color: var(--fg-primary);
+        font-family: system-ui, -apple-system, sans-serif;
+        border-radius: var(--radius-sm);
+        transition: background 0.15s;
+    }
+    section[data-testid="stSidebar"] .stButton > button:hover {
+        background: var(--bg-inset);
+        color: var(--accent);
+    }
+
+    /* Sidebar section labels */
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+        color: var(--fg-muted) !important;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        font-weight: 600;
+    }
+
+    /* Sidebar button text inherits */
     section[data-testid="stSidebar"] button [data-testid="stMarkdownContainer"],
     section[data-testid="stSidebar"] button [data-testid="stMarkdownContainer"] p {
         color: inherit !important;
     }
 
-    /* --- Forum Header Banner --- */
-    .forum-header {
-        background: linear-gradient(180deg, #0B198C 0%, #07104a 100%);
-        border: 1px solid #DEDFDF;
-        border-radius: 6px;
-        margin-bottom: 1.2rem;
-        overflow: hidden;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    /* ====== SIDEBAR CAR INFO CARD ====== */
+    .car-info-card {
+        background: var(--bg-base);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-md);
+        padding: 16px;
+        font-size: 13px;
+        color: var(--fg-secondary);
+        line-height: 1.5;
     }
-    .forum-topbar {
-        background: #050b30;
-        color: #FFCF87;
-        font-size: 0.65em;
-        letter-spacing: 2px;
+    .car-info-card .card-label {
+        font-size: 11px;
+        font-weight: 600;
         text-transform: uppercase;
-        padding: 5px 16px;
-        border-bottom: 1px solid rgba(255,207,135,0.2);
-        font-family: Tahoma, Verdana, sans-serif;
+        letter-spacing: 0.6px;
+        color: var(--fg-muted);
+        margin: 0 0 4px 0;
     }
-    .forum-topbar a { color: #FFCF87 !important; text-decoration: none; }
-    .forum-banner-content {
-        padding: 18px 24px 14px;
-        text-align: center;
+    .car-info-card .card-label:not(:first-child) {
+        margin-top: 12px;
     }
-    .forum-banner-content h1 {
-        color: #ffffff;
-        font-size: 1.6em;
-        font-family: Tahoma, 'Trebuchet MS', Verdana, sans-serif;
-        font-weight: bold;
-        margin: 0 0 2px 0;
-        text-shadow: 1px 1px 4px rgba(0,0,0,0.6);
+    .car-info-card .card-value {
+        font-size: 13px;
+        color: var(--fg-primary);
+        font-weight: 500;
+        margin: 0;
     }
-    .forum-divider {
-        height: 1px;
-        background: linear-gradient(90deg, transparent 5%, #FFCF87 50%, transparent 95%);
-        margin: 8px auto;
-        width: 60%;
-    }
-    .forum-subtitle {
-        color: rgba(255,255,255,0.75);
-        font-size: 0.78em;
-        margin: 4px 0 0 0;
-        font-family: Verdana, Arial, sans-serif;
-    }
-    .forum-car-badge {
-        display: inline-block;
-        background: rgba(255,207,135,0.15);
-        border: 1px solid rgba(255,207,135,0.3);
-        border-radius: 4px;
-        padding: 3px 10px;
-        margin-top: 8px;
-        color: #FFCF87;
-        font-size: 0.7em;
-        letter-spacing: 0.5px;
-    }
-    .forum-gold-bar {
-        height: 3px;
-        background: linear-gradient(90deg, #FFCF87, #d4a84b, #FFCF87);
+    .car-info-card .card-sources {
+        font-size: 11px;
+        color: var(--fg-muted);
+        line-height: 1.6;
+        margin-top: 4px;
     }
 
-    /* --- Chat Messages --- */
-    [data-testid="stChatMessage"] {
-        background: #F7F7F7 !important;
-        border: 1px solid #DEDFDF !important;
-        border-radius: 4px !important;
-        margin-bottom: 10px !important;
-    }
-    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"],
-    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p,
-    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] li {
-        color: #333333 !important;
-    }
-    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
-        border-left: 3px solid #0B198C !important;
-        background: #F0F0F5 !important;
-    }
-    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
-        border-left: 3px solid #FFBF67 !important;
-        background: #F7F7F7 !important;
-    }
-
-    /* --- Links --- */
-    a { color: #0B198C !important; }
-    a:hover { color: #FF6633 !important; text-decoration: underline !important; }
-
-    /* --- Sidebar --- */
-    section[data-testid="stSidebar"] {
-        background-color: #F0F1F3 !important;
-        border-right: 2px solid #0B198C !important;
-    }
-    section[data-testid="stSidebar"] > div {
-        background-color: #F0F1F3 !important;
-    }
-    section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"],
-    section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] div,
-    section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] p,
-    section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] span {
-        background-color: #0B198C !important;
-        border: 1px solid #0B198C !important;
-        color: #FFFFFF !important;
-    }
-    section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"]:hover {
-        background-color: #0e1fa8 !important;
-    }
-    section[data-testid="stSidebar"] .stButton > button {
-        text-align: left;
-        font-size: 0.8em;
-        padding: 6px 10px;
-        border: none;
-        background: transparent;
-        color: #444444;
-        font-family: Verdana, Arial, sans-serif;
-    }
-    section[data-testid="stSidebar"] .stButton > button:hover {
-        background: rgba(11, 25, 140, 0.08);
-        color: #0B198C;
-    }
-    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
-        color: #0B198C !important;
-        font-size: 0.7em;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: bold;
-    }
-
-    /* --- Popover trigger --- */
+    /* ====== POPOVER (conversation menu) ====== */
     section[data-testid="stSidebar"] [data-testid="stPopover"] > button,
     section[data-testid="stSidebar"] button:has([data-testid="stIconMaterial"]) {
         border: none !important;
         background: transparent !important;
         box-shadow: none !important;
-        padding: 4px 2px !important;
+        padding: 4px !important;
         min-height: 0 !important;
-        color: #888 !important;
+        color: var(--fg-muted) !important;
         outline: none !important;
     }
     section[data-testid="stSidebar"] [data-testid="stPopover"] > button:hover,
     section[data-testid="stSidebar"] button:has([data-testid="stIconMaterial"]):hover {
-        color: #0B198C !important;
-        background: transparent !important;
+        color: var(--accent) !important;
     }
     section[data-testid="stSidebar"] [data-testid="stIconMaterial"] {
         display: none !important;
@@ -215,114 +234,274 @@ st.markdown("""
     [data-testid="stPopoverBody"],
     [data-testid="stPopoverBody"] > div,
     [data-testid="stPopoverBody"] div {
-        background-color: #FFFFFF !important;
-        border-color: #DEDFDF !important;
+        background-color: var(--bg-base) !important;
+        border-color: var(--border-default) !important;
     }
     [data-testid="stPopoverBody"] {
-        border-radius: 4px !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
-        padding: 2px 0 !important;
+        border-radius: var(--radius-md) !important;
+        border: 1px solid var(--border-strong) !important;
+        padding: 4px !important;
         min-width: 0 !important;
     }
     [data-testid="stPopoverBody"] > div {
-        padding: 2px 4px !important;
+        padding: 0 !important;
         gap: 0 !important;
     }
     [data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] { gap: 0 !important; }
     [data-testid="stPopoverBody"] [data-testid="stElementContainer"] { margin: 0 !important; padding: 0 !important; }
     [data-testid="stPopoverBody"] button {
-        color: #333333 !important;
+        color: var(--fg-primary) !important;
         background: transparent !important;
         border: none !important;
-        padding: 4px 12px !important;
+        padding: 6px 12px !important;
         min-height: 0 !important;
-        font-size: 0.82em !important;
+        font-size: 13px !important;
+        border-radius: var(--radius-sm) !important;
     }
     [data-testid="stPopoverBody"] button:hover {
-        background: #F0F1F3 !important;
-        color: #0B198C !important;
+        background: var(--bg-inset) !important;
+        color: var(--accent) !important;
     }
     [data-testid="stPopoverBody"] button [data-testid="stMarkdownContainer"] p {
-        color: #333333 !important;
-        font-size: 0.82em !important;
+        color: inherit !important;
+        font-size: 13px !important;
         margin: 0 !important;
     }
-    [data-testid="stPopoverBody"] button:hover [data-testid="stMarkdownContainer"] p {
-        color: #0B198C !important;
+
+    /* ====== CHAT MESSAGES ====== */
+    [data-testid="stChatMessage"] {
+        background: var(--bg-base) !important;
+        border: 1px solid var(--border-default) !important;
+        border-radius: var(--radius-md) !important;
+        margin-bottom: 8px !important;
+        padding: 16px !important;
+    }
+    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"],
+    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p,
+    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] li {
+        color: var(--fg-primary) !important;
+    }
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+        border-left: 3px solid var(--accent) !important;
+        background: var(--bg-elevated) !important;
+    }
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
+        border-left: 3px solid var(--accent-warm) !important;
+        background: var(--bg-base) !important;
+    }
+    [data-testid="stChatMessage"] hr {
+        border-color: var(--border-default) !important;
+    }
+    [data-testid="stChatMessage"] strong {
+        color: var(--accent) !important;
+    }
+    /* Part numbers monospace */
+    [data-testid="stChatMessage"] code {
+        font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace !important;
+        font-size: 12px !important;
+        background: var(--bg-inset) !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
+        color: var(--fg-primary) !important;
     }
 
-    /* --- Chat Input --- */
-    [data-testid="stChatInput"] {
-        background: #FFFFFF !important;
-        border: 1px solid #DEDFDF !important;
-        border-radius: 6px !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
-    }
-    [data-testid="stChatInput"]:focus-within {
-        border-color: #0B198C !important;
-        box-shadow: 0 0 0 1px #0B198C !important;
-    }
-
-    /* --- Sidebar car info --- */
-    .sidebar-car-info {
-        background: linear-gradient(180deg, #0B198C, #07104a);
-        border: 1px solid #DEDFDF;
-        border-radius: 6px;
-        padding: 12px;
-        font-size: 0.75em;
-        color: #d0d4dc;
-    }
-    .sidebar-car-info strong { color: #FFCF87; }
-    .sidebar-sources {
-        color: #a0a8b8;
-        font-size: 0.9em;
-        margin-top: 6px;
-    }
-
-    /* --- Spinner --- */
-    [data-testid="stSpinner"] { color: #0B198C !important; }
-
-    /* --- Chat hr / bold --- */
-    [data-testid="stChatMessage"] hr { border-color: #DEDFDF !important; }
-    [data-testid="stChatMessage"] strong { color: #0B198C !important; }
-
-    /* --- Header / bottom / main bg fixes --- */
-    header[data-testid="stHeader"] { background-color: #FFFFFF !important; }
-    [data-testid="stBottomBlockContainer"] { background-color: #FFFFFF !important; }
-    [data-testid="stBottom"] > div { background-color: #FFFFFF !important; }
+    /* ====== CHAT INPUT ====== */
+    [data-testid="stChatInput"],
     .stChatInput, .stChatInput > div, .stChatInput > div > div,
-    .stChatInput > div > div > div, .stChatInput div { background-color: #FFFFFF !important; }
-    .stChatInput textarea { background-color: #FFFFFF !important; color: #333333 !important; }
-    .stChatInput { border: 1px solid #DEDFDF !important; border-radius: 8px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important; }
-    .stChatInput:focus-within { border-color: #0B198C !important; box-shadow: 0 0 0 1px #0B198C !important; }
-    .stChatInput button { background-color: #0B198C !important; color: #FFFFFF !important; }
-    .stChatInput button:hover { background-color: #0e1fa8 !important; }
-    .stChatInput button svg { fill: #FFFFFF !important; color: #FFFFFF !important; }
-    .main .block-container { background-color: #FFFFFF !important; }
-    [data-testid="stMainBlockContainer"] { background-color: #FFFFFF !important; }
-    .stApp > div, .stApp > div > div { background-color: transparent !important; }
-    [data-testid="stPopover"] > div { background-color: #FFFFFF !important; border: 1px solid #DEDFDF !important; }
-
-    /* --- Google login button styling --- */
-    .google-login-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        background: #FFFFFF;
-        border: 2px solid #0B198C;
-        border-radius: 6px;
-        padding: 12px 28px;
-        font-size: 1.05em;
-        font-family: Verdana, Arial, sans-serif;
-        color: #0B198C;
-        cursor: pointer;
-        font-weight: bold;
-        margin-top: 12px;
-        transition: all 0.15s;
+    .stChatInput > div > div > div, .stChatInput div {
+        background-color: var(--bg-base) !important;
     }
-    .google-login-btn:hover {
-        background: #0B198C;
-        color: #FFFFFF;
+    .stChatInput textarea {
+        background-color: var(--bg-base) !important;
+        color: var(--fg-primary) !important;
+        font-family: system-ui, -apple-system, sans-serif !important;
+        font-size: 14px !important;
+    }
+    [data-testid="stChatInputTextArea"] {
+        font-family: system-ui, -apple-system, sans-serif !important;
+        font-size: 14px !important;
+        color: var(--fg-primary) !important;
+    }
+    .stChatInput {
+        border: 1px solid var(--border-strong) !important;
+        border-radius: var(--radius-md) !important;
+    }
+    .stChatInput:focus-within {
+        border-color: var(--accent) !important;
+    }
+    .stChatInput button {
+        background-color: var(--accent) !important;
+        color: #ffffff !important;
+        border-radius: var(--radius-sm) !important;
+    }
+    .stChatInput button:hover {
+        background-color: var(--accent-hover) !important;
+    }
+    .stChatInput button svg {
+        fill: #ffffff !important;
+        color: #ffffff !important;
+    }
+
+    /* ====== LINKS ====== */
+    a { color: var(--accent) !important; }
+    a:hover { color: var(--accent-hover) !important; text-decoration: underline !important; }
+
+    /* ====== BACKGROUNDS — clean up Streamlit defaults ====== */
+    header[data-testid="stHeader"] {
+        background-color: var(--bg-base) !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+    [data-testid="stBottomBlockContainer"] { background-color: var(--bg-base) !important; }
+    [data-testid="stBottom"] > div { background-color: var(--bg-base) !important; }
+    .main .block-container {
+        background-color: var(--bg-base) !important;
+        padding-top: 3rem !important;
+    }
+    [data-testid="stMainBlockContainer"] { background-color: var(--bg-base) !important; }
+    .stApp > div, .stApp > div > div { background-color: transparent !important; }
+    [data-testid="stPopover"] > div { background-color: var(--bg-base) !important; border: 1px solid var(--border-default) !important; }
+
+    /* ====== SPINNER ====== */
+    [data-testid="stSpinner"] { color: var(--accent) !important; }
+
+    /* ====== LANDING PAGE ====== */
+    .landing-container {
+        max-width: 440px;
+        margin: 80px auto 0 auto;
+        text-align: center;
+        padding: 0 16px;
+    }
+    .landing-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+    .landing-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--fg-primary);
+        margin: 0 0 8px 0;
+        letter-spacing: -0.3px;
+    }
+    .landing-desc {
+        font-size: 14px;
+        color: var(--fg-secondary);
+        line-height: 1.6;
+        margin: 0 0 32px 0;
+    }
+    .landing-footer {
+        font-size: 12px;
+        color: var(--fg-muted);
+        margin-top: 16px;
+    }
+    .landing-stats {
+        display: flex;
+        justify-content: center;
+        gap: 32px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-default);
+    }
+    .landing-stat {
+        text-align: center;
+    }
+    .landing-stat-value {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--fg-primary);
+    }
+    .landing-stat-label {
+        font-size: 11px;
+        color: var(--fg-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 2px;
+    }
+
+    /* ====== ONBOARDING ====== */
+    .onboard-header {
+        text-align: center;
+        padding: 32px 0 24px 0;
+        border-bottom: 1px solid var(--border-default);
+        margin-bottom: 24px;
+    }
+    .onboard-title {
+        font-size: 22px !important;
+        font-weight: 600 !important;
+        color: var(--fg-primary) !important;
+        margin: 0 0 4px 0 !important;
+        line-height: 1.3 !important;
+    }
+    .onboard-sub {
+        font-size: 13px;
+        color: var(--fg-secondary);
+        margin: 0;
+    }
+
+    /* Override Streamlit heading defaults inside our custom containers */
+    [data-testid="stMarkdownContainer"] .landing-title,
+    [data-testid="stMarkdownContainer"] .onboard-title,
+    [data-testid="stMarkdownContainer"] .app-header-title {
+        font-family: system-ui, -apple-system, sans-serif !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    /* ====== FORM STYLING ====== */
+    [data-testid="stForm"] {
+        border: 1px solid var(--border-default) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 24px !important;
+        background: var(--bg-base) !important;
+    }
+
+    /* ====== SIDEBAR DIVIDERS — subtle ====== */
+    section[data-testid="stSidebar"] hr {
+        border-color: var(--border-default) !important;
+        margin: 4px 0 !important;
+    }
+
+    /* ====== SIDEBAR EDIT PROFILE BUTTON ====== */
+    section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
+        font-size: 12px;
+        color: var(--fg-muted);
+    }
+    section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
+        color: var(--accent);
+    }
+
+    /* ====== USER INFO (sidebar bottom) ====== */
+    .user-info {
+        font-size: 12px;
+        color: var(--fg-muted);
+        padding: 4px 0;
+    }
+    .user-info strong {
+        color: var(--fg-secondary) !important;
+        font-weight: 500;
+    }
+
+    /* ====== EMPTY STATE ====== */
+    .empty-state {
+        text-align: center;
+        padding: 64px 24px;
+        color: var(--fg-muted);
+    }
+    .empty-state-icon {
+        font-size: 36px;
+        margin-bottom: 12px;
+    }
+    .empty-state-title {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--fg-secondary);
+        margin: 0 0 4px 0;
+    }
+    .empty-state-desc {
+        font-size: 13px;
+        color: var(--fg-muted);
+        margin: 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -334,75 +513,83 @@ st.markdown("""
 
 from api.auth import user_id_from_email, load_user_profile, save_user_profile, decode_vin
 
-# Debug: show Streamlit version and auth state
-_st_version = st.__version__
-
+# Dev mode: bypass auth when [auth] secrets aren't configured (local development)
+_DEV_MODE = False
 try:
     _is_logged_in = st.user.is_logged_in
-except Exception as _auth_err:
-    st.error(f"Auth check failed (Streamlit {_st_version}): {_auth_err}")
-    st.info("This may mean your `[auth]` secrets are not configured correctly.")
-    st.code(f"st.user type: {type(getattr(st, 'user', 'MISSING'))}")
-    st.stop()
+except Exception:
+    if os.getenv("DEV_MODE", "").lower() in ("1", "true", "yes"):
+        _DEV_MODE = True
+        _is_logged_in = True
+    else:
+        st.error("Authentication is not configured. Check your `[auth]` secrets.")
+        st.stop()
 
 if not _is_logged_in:
-    # --- Landing page for unauthenticated users ---
+    # --- Landing page ---
     st.markdown("""
-    <div class="forum-header">
-        <div class="forum-topbar">
-            Porsche Forums &rsaquo; 993 Technical &rsaquo; Knowledge Base
-        </div>
-        <div class="forum-banner-content">
-            <h1>&#x1F527; 993 Repair Assistant</h1>
-            <div class="forum-divider"></div>
-            <p class="forum-subtitle">
-                Powered by real Porsche forum knowledge
-            </p>
-        </div>
-        <div class="forum-gold-bar"></div>
+    <div class="landing-container">
+        <div class="landing-icon">🔧</div>
+        <div class="landing-title">993 Repair Assistant</div>
+        <p class="landing-desc">
+            Expert repair advice for your Porsche 993, powered by
+            real forum knowledge from Pelican Parts, Rennlist, 911uk, and more.
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("")
-    st.markdown("#### Welcome to the 993 Repair Assistant")
-    st.markdown(
-        "Get expert repair advice for your Porsche 993, powered by **140,000+ real forum posts** "
-        "from Pelican Parts, Rennlist, 911uk, and more."
-    )
-    st.markdown("")
-
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns([1.2, 2, 1.2])
     with col2:
-        st.button("🔐  Sign in with Google", on_click=st.login,
+        st.button("Sign in with Google", on_click=st.login,
                   use_container_width=True, type="primary")
 
-    st.markdown("")
-    st.caption("Sign in to save your chat history and personalize advice to your car.")
+    st.markdown("""
+    <div class="landing-container" style="margin-top: 0;">
+        <p class="landing-footer">
+            Sign in to save your chat history and get advice tailored to your car.
+        </p>
+        <div class="landing-stats">
+            <div class="landing-stat">
+                <div class="landing-stat-value">140K+</div>
+                <div class="landing-stat-label">Forum Posts</div>
+            </div>
+            <div class="landing-stat">
+                <div class="landing-stat-value">9</div>
+                <div class="landing-stat-label">Sources</div>
+            </div>
+            <div class="landing-stat">
+                <div class="landing-stat-value">993</div>
+                <div class="landing-stat-label">Focused</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     st.stop()
 
 # --- User is authenticated ---
-try:
-    _user_dict = st.user.to_dict()
-    user_email = _user_dict.get("email", "")
-    display_name = _user_dict.get("name", user_email)
-except Exception as _ue:
-    # Fallback: try direct access
+if _DEV_MODE:
+    user_email = "dev@localhost"
+    display_name = "Developer"
+else:
     try:
-        user_email = st.user["email"]
-        display_name = st.user.get("name", user_email)
-    except Exception as _ue2:
-        st.error(f"Could not read user info after login: {_ue2}")
-        st.code(f"st.user = {st.user}\ntype = {type(st.user)}")
-        if st.button("Sign out and try again"):
+        _user_dict = st.user.to_dict()
+        user_email = _user_dict.get("email", "")
+        display_name = _user_dict.get("name", user_email)
+    except Exception:
+        try:
+            user_email = st.user["email"]
+            display_name = st.user.get("name", user_email)
+        except Exception:
+            st.error("Could not read user info. Please sign out and try again.")
+            if st.button("Sign out"):
+                st.logout()
+            st.stop()
+
+    if not user_email:
+        st.warning("No email found. Please sign out and try again.")
+        if st.button("Sign out"):
             st.logout()
         st.stop()
-
-if not user_email:
-    st.warning("Logged in but no email found. Please sign out and try again.")
-    st.code(f"st.user = {st.user.to_dict() if hasattr(st.user, 'to_dict') else str(st.user)}")
-    if st.button("Sign out"):
-        st.logout()
-    st.stop()
 
 user_id = user_id_from_email(user_email)
 
@@ -412,33 +599,33 @@ user_id = user_id_from_email(user_email)
 # ======================================================================
 
 if "car_profile" not in st.session_state:
-    profile = load_user_profile(user_id)
-    st.session_state.car_profile = profile  # None if first visit
+    if _DEV_MODE:
+        # In dev mode, use a default profile so we can preview the main UI
+        st.session_state.car_profile = {
+            "vin": "",
+            "year": "1997",
+            "model": "Targa",
+            "transmission": "Tiptronic",
+            "mileage": "80,000",
+            "known_issues": "",
+        }
+    else:
+        profile = load_user_profile(user_id)
+        st.session_state.car_profile = profile
 
 
 def _show_onboarding():
     """Show the car profile onboarding form. Returns True if completed."""
     st.markdown("""
-    <div class="forum-header">
-        <div class="forum-topbar">
-            Porsche Forums &rsaquo; 993 Technical &rsaquo; Setup
-        </div>
-        <div class="forum-banner-content">
-            <h1>&#x1F3CE; Tell us about your 993</h1>
-            <div class="forum-divider"></div>
-            <p class="forum-subtitle">
-                We'll personalize all advice to your specific car
-            </p>
-        </div>
-        <div class="forum-gold-bar"></div>
+    <div class="onboard-header">
+        <div class="onboard-title">Set up your car profile</div>
+        <p class="onboard-sub">We'll personalize all advice to your specific 993.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown(f"Welcome, **{display_name}**! Let's set up your car profile.")
+    st.markdown(f"Welcome, **{display_name}**.")
 
     with st.form("car_profile_form"):
-        st.subheader("Your Car Details")
-
         vin = st.text_input(
             "VIN (optional — auto-fills fields below)",
             max_chars=17,
@@ -468,14 +655,14 @@ def _show_onboarding():
             options=["", "Manual (G50)", "Tiptronic"],
             index=0,
         )
-        mileage = st.text_input("Approximate Mileage", placeholder="80,000")
+        mileage = st.text_input("Approximate mileage", placeholder="80,000")
         known_issues = st.text_area(
-            "Known Issues (optional)",
+            "Known issues (optional)",
             placeholder="e.g. Oil leak from RMS, soft top motor slow, AC needs recharge...",
             height=100,
         )
 
-        submitted = st.form_submit_button("Save & Start Chatting", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("Save & start chatting", type="primary", use_container_width=True)
 
         if submitted:
             if vin and len(vin) == 17:
@@ -487,7 +674,7 @@ def _show_onboarding():
                         model = decoded["model"]
 
             if not year or not model:
-                st.error("Please at least select the year and model of your 993.")
+                st.error("Please select at least the year and model.")
                 return False
 
             profile = {
@@ -509,9 +696,14 @@ def _show_edit_profile():
     """Show edit profile form inline."""
     profile = st.session_state.car_profile or {}
 
-    with st.form("edit_profile_form"):
-        st.subheader("Edit Car Profile")
+    st.markdown("""
+    <div class="onboard-header">
+        <div class="onboard-title">Edit car profile</div>
+        <p class="onboard-sub">Update your details to keep advice accurate.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
+    with st.form("edit_profile_form"):
         vin = st.text_input("VIN (optional)", value=profile.get("vin", ""), max_chars=17)
 
         col1, col2 = st.columns(2)
@@ -535,14 +727,20 @@ def _show_edit_profile():
         trans_idx = trans_list.index(curr_trans) if curr_trans in trans_list else 0
         transmission = st.selectbox("Transmission", options=trans_list, index=trans_idx)
 
-        mileage = st.text_input("Approximate Mileage", value=profile.get("mileage", ""))
+        mileage = st.text_input("Approximate mileage", value=profile.get("mileage", ""))
         known_issues = st.text_area(
-            "Known Issues",
+            "Known issues",
             value=profile.get("known_issues", ""),
             height=100,
         )
 
-        if st.form_submit_button("Save Changes", type="primary", use_container_width=True):
+        col_save, col_cancel = st.columns(2)
+        with col_save:
+            save_clicked = st.form_submit_button("Save changes", type="primary", use_container_width=True)
+        with col_cancel:
+            cancel_clicked = st.form_submit_button("Cancel", use_container_width=True)
+
+        if save_clicked:
             updated = {
                 "vin": vin.strip(),
                 "year": year,
@@ -553,6 +751,10 @@ def _show_edit_profile():
             }
             save_user_profile(user_id, updated)
             st.session_state.car_profile = updated
+            st.session_state.show_edit_profile = False
+            st.rerun()
+
+        if cancel_clicked:
             st.session_state.show_edit_profile = False
             st.rerun()
 
@@ -615,13 +817,15 @@ if "show_edit_profile" not in st.session_state:
 # ======================================================================
 
 with st.sidebar:
-    if st.button("＋ New Chat", use_container_width=True, type="primary"):
+    # --- New chat button ---
+    if st.button("＋ New chat", use_container_width=True, type="primary"):
         st.session_state.current_conv_id = None
         st.session_state.messages = []
         st.rerun()
 
     st.divider()
 
+    # --- Conversation list ---
     today = datetime.now().date()
     yesterday = today - timedelta(days=1)
     week_ago = today - timedelta(days=7)
@@ -632,7 +836,7 @@ with st.sidebar:
         reverse=True,
     )
 
-    groups = {"Today": [], "Yesterday": [], "This Week": [], "Older": []}
+    groups = {"Today": [], "Yesterday": [], "This week": [], "Older": []}
     for conv in conversations:
         try:
             conv_date = datetime.fromisoformat(conv["updated_at"]).date()
@@ -641,7 +845,7 @@ with st.sidebar:
             elif conv_date == yesterday:
                 groups["Yesterday"].append(conv)
             elif conv_date >= week_ago:
-                groups["This Week"].append(conv)
+                groups["This week"].append(conv)
             else:
                 groups["Older"].append(conv)
         except (KeyError, ValueError):
@@ -656,11 +860,12 @@ with st.sidebar:
             is_active = conv_id == st.session_state.current_conv_id
             title = conv.get("title", "Untitled")
 
+            # Delete confirmation
             if st.session_state.confirm_delete == conv_id:
                 st.warning(f"Delete **{title}**?", icon="⚠️")
                 dc1, dc2 = st.columns(2)
                 with dc1:
-                    if st.button("Yes, delete", key=f"yes_{conv_id}", use_container_width=True):
+                    if st.button("Delete", key=f"yes_{conv_id}", use_container_width=True):
                         st.session_state.conv_index = delete_conversation(
                             conv_id, st.session_state.conv_index, user_id=user_id
                         )
@@ -675,6 +880,7 @@ with st.sidebar:
                         st.rerun()
                 continue
 
+            # Rename inline
             if st.session_state.editing_conv_id == conv_id:
                 new_title = st.text_input(
                     "Rename", value=title,
@@ -697,6 +903,7 @@ with st.sidebar:
                         st.rerun()
                 continue
 
+            # Conversation row
             cols = st.columns([5, 1])
             with cols[0]:
                 btn_label = f"{'▸ ' if is_active else '  '}{title}"
@@ -719,47 +926,49 @@ with st.sidebar:
                         st.session_state.confirm_delete = conv_id
                         st.rerun()
 
-    if conversations:
-        st.divider()
-
-    # Edit profile
-    if st.button("✏️ Edit Car Profile", use_container_width=True):
-        st.session_state.show_edit_profile = not st.session_state.show_edit_profile
-        st.rerun()
-
     st.divider()
 
-    # Car info footer
+    # --- Car info card ---
     car_year = car_profile.get("year", "")
     car_model = car_profile.get("model", "993")
     car_trans = car_profile.get("transmission", "")
     car_miles = car_profile.get("mileage", "")
     car_line = f"{car_year} 993 {car_model}"
     if car_trans:
-        car_line += f" {car_trans}"
+        car_line += f" · {car_trans}"
+
+    miles_line = ""
     if car_miles:
-        car_line += f" · ~{car_miles} mi"
+        miles_line = f'<p class="card-value">~{car_miles} mi</p>'
 
     st.markdown(f"""
-    <div class="sidebar-car-info">
-        <strong>Your Car</strong><br>
-        {car_line}<br><br>
-        <strong>Knowledge Base</strong><br>
-        {chunk_count:,} forum posts indexed<br>
-        <div class="sidebar-sources">
-            Pelican Parts · Rennlist · 911uk ·
-            6SpeedOnline · TIPEC · Carpokes ·
-            p-car.com · YouTube · Blogs
-        </div>
+    <div class="car-info-card">
+        <p class="card-label">Your car</p>
+        <p class="card-value">{car_line}</p>
+        {miles_line}
+        <p class="card-label">Knowledge base</p>
+        <p class="card-value">{chunk_count:,} chunks indexed</p>
+        <p class="card-sources">
+            Pelican Parts · Rennlist · 911uk · 6SpeedOnline · TIPEC · Carpokes · YouTube
+        </p>
     </div>
     """, unsafe_allow_html=True)
+
+    st.markdown("")
+
+    # Edit profile
+    if st.button("Edit car profile", use_container_width=True):
+        st.session_state.show_edit_profile = not st.session_state.show_edit_profile
+        st.rerun()
 
     st.divider()
 
     # User info + logout
-    st.caption(f"Signed in as **{display_name}**")
-    if st.button("Sign out"):
-        st.logout()
+    first_name = display_name.split()[0] if display_name else user_email
+    st.markdown(f'<p class="user-info">Signed in as <strong>{first_name}</strong></p>', unsafe_allow_html=True)
+    if not _DEV_MODE:
+        if st.button("Sign out", use_container_width=True):
+            st.logout()
 
 
 # ======================================================================
@@ -775,33 +984,37 @@ if st.session_state.show_edit_profile:
 # MAIN CHAT AREA
 # ======================================================================
 
-car_badge = f"{car_profile.get('year', '')} {car_profile.get('model', '')} {car_profile.get('transmission', '')}"
+# Header
+car_badge_text = f"{car_profile.get('year', '')} {car_profile.get('model', '')}"
+if car_profile.get("transmission"):
+    car_badge_text += f" · {car_profile['transmission']}"
 if car_profile.get("mileage"):
-    car_badge += f" &middot; ~{car_profile['mileage']} mi"
+    car_badge_text += f" · ~{car_profile['mileage']} mi"
 
 st.markdown(f"""
-<div class="forum-header">
-    <div class="forum-topbar">
-        Porsche Forums &rsaquo; 993 Technical &rsaquo; Knowledge Base
-    </div>
-    <div class="forum-banner-content">
-        <h1>&#x1F527; 993 Repair Assistant</h1>
-        <div class="forum-divider"></div>
-        <p class="forum-subtitle">
-            Powered by real Porsche forum knowledge
-        </p>
-        <span class="forum-car-badge">
-            {car_badge.strip()}
-        </span>
-    </div>
-    <div class="forum-gold-bar"></div>
+<div class="app-header">
+    <div class="app-header-title">🔧 993 Repair Assistant</div>
+    <p class="app-header-sub">Ask anything about your Porsche 993 — powered by real forum knowledge.</p>
+    <span class="app-car-tag">{car_badge_text.strip()}</span>
 </div>
 """, unsafe_allow_html=True)
 
+# Empty state
+if not st.session_state.messages:
+    st.markdown("""
+    <div class="empty-state">
+        <div class="empty-state-icon">💬</div>
+        <p class="empty-state-title">Start a conversation</p>
+        <p class="empty-state-desc">Ask about repairs, maintenance, part numbers, or troubleshooting.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Chat messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
+# Chat input
 if prompt := st.chat_input("Ask about your 993..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
