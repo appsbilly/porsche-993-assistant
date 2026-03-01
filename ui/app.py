@@ -1025,11 +1025,14 @@ if prompt := st.chat_input("Ask about your 993..."):
             from api.chat import (
                 search, build_context, build_system_prompt,
                 extract_part_numbers, generate_parts_links,
-                _car_description,
+                _car_description, rewrite_follow_up,
             )
             import anthropic
 
-            sources = search(prompt)
+            # Rewrite follow-up questions to include conversation context
+            # so the RAG search finds relevant chunks
+            search_query = rewrite_follow_up(prompt, st.session_state.messages[:-1])
+            sources = search(search_query)
             context = build_context(sources)
             system_prompt = build_system_prompt(car_profile)
             car_desc = _car_description(car_profile)

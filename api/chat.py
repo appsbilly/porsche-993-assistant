@@ -115,6 +115,71 @@ SYSTEM_PROMPT = build_system_prompt()
 
 
 # ---------------------------------------------------------------------------
+# Query rewriting for follow-up questions
+# ---------------------------------------------------------------------------
+
+def rewrite_follow_up(prompt: str, conversation_history: list[dict]) -> str:
+    """Rewrite a follow-up question into a standalone search query.
+
+    When the user asks "Should I just replace the part?", the RAG search needs
+    to know WHAT part — which comes from the conversation history. This function
+    uses Claude Haiku to rewrite follow-ups into self-contained queries.
+
+    Returns the original prompt unchanged if it's already self-contained or
+    if there's no conversation history.
+    """
+    if not conversation_history:
+        return prompt
+
+    # Only rewrite if the prompt looks like a follow-up (short, uses pronouns, etc.)
+    # But to keep it simple and reliable, always rewrite when there's history
+    import anthropic
+
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        return prompt
+
+    # Build a compact summary of recent conversation (last 4 messages max)
+    recent = conversation_history[-4:]
+    conv_lines = []
+    for msg in recent:
+        role = "User" if msg["role"] == "user" else "Assistant"
+        # Truncate long assistant messages to just the first ~200 chars
+        content = msg["content"]
+        if role == "Assistant" and len(content) > 300:
+            content = content[:300] + "..."
+        conv_lines.append(f"{role}: {content}")
+
+    conv_text = "\n".join(conv_lines)
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        response = client.messages.create(
+            model="claude-haiku-4-20250414",
+            max_tokens=150,
+            messages=[{
+                "role": "user",
+                "content": f"""Rewrite this follow-up question into a standalone search query that includes the necessary context from the conversation. The query should work for searching a Porsche 993 forum knowledge base.
+
+CONVERSATION:
+{conv_text}
+
+FOLLOW-UP QUESTION: {prompt}
+
+Write ONLY the rewritten search query, nothing else. If the question is already self-contained, return it unchanged.""",
+            }],
+        )
+        rewritten = response.content[0].text.strip()
+        # Sanity check: don't return something wildly different or too long
+        if rewritten and len(rewritten) < 500:
+            return rewritten
+    except Exception:
+        pass  # Fall back to original prompt
+
+    return prompt
+
+
+# ---------------------------------------------------------------------------
 # Parts helpers
 # ---------------------------------------------------------------------------
 
