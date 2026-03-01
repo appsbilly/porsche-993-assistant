@@ -23,86 +23,89 @@ load_dotenv(Path(__file__).parent.parent / ".env", override=True)
 # --- Page config ---
 st.set_page_config(
     page_title="993 Repair Assistant",
-    page_icon="🔧",
+    page_icon="wrench",
     layout="centered",
 )
 
-# --- Design System CSS ---
+# --- Rennlist-Inspired Design System CSS ---
 # Tokens:
+#   Palette: Rennlist forum DNA (#677887 slate, #36576f header, #a62a2a brick-red hover)
 #   Spacing base: 4px  |  Scale: 4, 8, 12, 16, 24, 32, 48
-#   Depth: borders-only (no shadows, no gradients on content)
-#   Radius: 6px (controls), 8px (cards), 10px (containers)
-#   Font: system-ui  |  Sizes: 11px labels, 13px body, 15px subhead, 20px title
-#   Palette: slate-900 text, gray-500 secondary, warm-amber accent, deep-slate primary
+#   Depth: borders-only (1px solid, no shadows)
+#   Radius: 3px everywhere (forum-utilitarian)
+#   Font: Verdana  |  Sizes: 11px labels, 13px body, 14px subhead, 18px title
 st.markdown("""
 <style>
     /* ====== DESIGN TOKENS ====== */
     :root {
-        --fg-primary: #111827;
-        --fg-secondary: #6b7280;
-        --fg-muted: #9ca3af;
-        --fg-faint: #d1d5db;
-        --bg-base: #ffffff;
-        --bg-elevated: #f9fafb;
-        --bg-inset: #f3f4f6;
-        --border-default: rgba(0, 0, 0, 0.08);
-        --border-strong: rgba(0, 0, 0, 0.15);
-        --accent: #1e3a5f;
-        --accent-hover: #2a4d7a;
-        --accent-warm: #c9a96e;
-        --accent-warm-bg: rgba(201, 169, 110, 0.08);
-        --accent-warm-border: rgba(201, 169, 110, 0.25);
-        --radius-sm: 6px;
-        --radius-md: 8px;
-        --radius-lg: 10px;
+        --fg-primary: #222222;
+        --fg-secondary: #555555;
+        --fg-muted: #888888;
+        --fg-faint: #aaaaaa;
+        --bg-base: #f1f1f1;
+        --bg-elevated: #ffffff;
+        --bg-inset: #e8e8e8;
+        --border-default: #cccccc;
+        --border-strong: #222222;
+        --accent: #677887;
+        --accent-dark: #36576f;
+        --accent-hover: #a62a2a;
+        --accent-hover-light: rgba(166, 42, 42, 0.08);
+        --thead-start: #677887;
+        --thead-end: #bdc6cc;
+        --radius: 3px;
     }
 
     /* ====== GLOBAL ====== */
     .stApp {
-        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+        font-family: Verdana, Geneva, sans-serif !important;
         background-color: var(--bg-base) !important;
     }
     [data-testid="stMarkdownContainer"],
     [data-testid="stMarkdownContainer"] p,
     [data-testid="stMarkdownContainer"] li {
-        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
-        font-size: 14px !important;
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 13px !important;
         line-height: 1.6 !important;
         color: var(--fg-primary) !important;
     }
 
-    /* ====== HEADER ====== */
+    /* ====== APP HEADER (dark slate bar) ====== */
     .app-header {
-        padding: 24px 0 16px 0;
-        border-bottom: 1px solid var(--border-default);
-        margin-bottom: 24px;
+        background: var(--accent-dark);
+        margin: -1rem -1rem 24px -1rem;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-strong);
     }
     .app-header h1.app-header-title,
     .app-header-title {
-        font-size: 22px !important;
-        font-weight: 600 !important;
-        color: var(--fg-primary) !important;
-        letter-spacing: -0.3px !important;
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        color: #ffffff !important;
+        letter-spacing: 0px !important;
         margin: 0 0 4px 0 !important;
         padding: 0 !important;
         line-height: 1.3 !important;
+        border: none !important;
     }
-    .app-header-sub {
-        font-size: 13px;
-        color: var(--fg-secondary);
-        margin: 0;
-        line-height: 1.5;
+    [data-testid="stMarkdownContainer"] .app-header-sub {
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 12px !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        margin: 0 !important;
+        line-height: 1.5 !important;
     }
     .app-car-tag {
         display: inline-block;
-        background: var(--accent-warm-bg);
-        border: 1px solid var(--accent-warm-border);
-        border-radius: var(--radius-sm);
-        padding: 4px 12px;
-        margin-top: 10px;
-        font-size: 12px;
-        font-weight: 500;
-        color: #8b6914;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: var(--radius);
+        padding: 3px 10px;
+        margin-top: 8px;
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 11px;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.85);
         letter-spacing: 0.2px;
     }
 
@@ -127,13 +130,14 @@ st.markdown("""
         background-color: var(--accent) !important;
         border: 1px solid var(--accent) !important;
         color: #ffffff !important;
-        border-radius: var(--radius-sm) !important;
-        font-size: 13px !important;
-        font-weight: 500 !important;
+        border-radius: var(--radius) !important;
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
     }
     section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"]:hover {
-        background-color: var(--accent-hover) !important;
-        border-color: var(--accent-hover) !important;
+        background-color: var(--accent-dark) !important;
+        border-color: var(--accent-dark) !important;
     }
     [data-testid="stBaseButton-primary"] [data-testid="stMarkdownContainer"],
     [data-testid="stBaseButton-primary"] [data-testid="stMarkdownContainer"] p {
@@ -143,27 +147,28 @@ st.markdown("""
     /* Sidebar conversation buttons */
     section[data-testid="stSidebar"] .stButton > button {
         text-align: left;
-        font-size: 13px;
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 12px;
         padding: 8px 12px;
         border: none;
         background: transparent;
         color: var(--fg-primary);
-        font-family: system-ui, -apple-system, sans-serif;
-        border-radius: var(--radius-sm);
-        transition: background 0.15s;
+        border-radius: var(--radius);
+        transition: background 0.15s, color 0.15s;
     }
     section[data-testid="stSidebar"] .stButton > button:hover {
-        background: var(--bg-inset);
-        color: var(--accent);
+        background: var(--accent-hover-light);
+        color: var(--accent-hover);
     }
 
     /* Sidebar section labels */
     section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
         color: var(--fg-muted) !important;
+        font-family: Verdana, Geneva, sans-serif !important;
         font-size: 11px;
         text-transform: uppercase;
-        letter-spacing: 0.8px;
-        font-weight: 600;
+        letter-spacing: 0.5px;
+        font-weight: 700;
     }
 
     /* Sidebar button text inherits */
@@ -172,37 +177,51 @@ st.markdown("""
         color: inherit !important;
     }
 
-    /* ====== SIDEBAR CAR INFO CARD ====== */
+    /* ====== SIDEBAR CAR INFO CARD (Rennlist thead-style) ====== */
     .car-info-card {
-        background: var(--bg-base);
+        background: var(--bg-elevated);
         border: 1px solid var(--border-default);
-        border-radius: var(--radius-md);
-        padding: 16px;
-        font-size: 13px;
-        color: var(--fg-secondary);
-        line-height: 1.5;
+        border-radius: var(--radius);
+        overflow: hidden;
+        font-family: Verdana, Geneva, sans-serif !important;
+    }
+    .car-info-card .card-header {
+        background: linear-gradient(to bottom, var(--thead-start), var(--thead-end));
+        padding: 8px 12px;
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 11px;
+        font-weight: 700;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .car-info-card .card-body {
+        padding: 12px;
     }
     .car-info-card .card-label {
+        font-family: Verdana, Geneva, sans-serif !important;
         font-size: 11px;
-        font-weight: 600;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.6px;
+        letter-spacing: 0.4px;
         color: var(--fg-muted);
-        margin: 0 0 4px 0;
+        margin: 0 0 2px 0;
     }
     .car-info-card .card-label:not(:first-child) {
         margin-top: 12px;
     }
     .car-info-card .card-value {
+        font-family: Verdana, Geneva, sans-serif !important;
         font-size: 13px;
         color: var(--fg-primary);
-        font-weight: 500;
+        font-weight: 700;
         margin: 0;
     }
-    .car-info-card .card-sources {
-        font-size: 11px;
-        color: var(--fg-muted);
-        line-height: 1.6;
+    [data-testid="stMarkdownContainer"] .car-info-card .card-sources {
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 11px !important;
+        color: var(--fg-muted) !important;
+        line-height: 1.6 !important;
         margin-top: 4px;
     }
 
@@ -219,7 +238,7 @@ st.markdown("""
     }
     section[data-testid="stSidebar"] [data-testid="stPopover"] > button:hover,
     section[data-testid="stSidebar"] button:has([data-testid="stIconMaterial"]):hover {
-        color: var(--accent) !important;
+        color: var(--accent-hover) !important;
     }
     section[data-testid="stSidebar"] [data-testid="stIconMaterial"] {
         display: none !important;
@@ -234,12 +253,12 @@ st.markdown("""
     [data-testid="stPopoverBody"],
     [data-testid="stPopoverBody"] > div,
     [data-testid="stPopoverBody"] div {
-        background-color: var(--bg-base) !important;
+        background-color: var(--bg-elevated) !important;
         border-color: var(--border-default) !important;
     }
     [data-testid="stPopoverBody"] {
-        border-radius: var(--radius-md) !important;
-        border: 1px solid var(--border-strong) !important;
+        border-radius: var(--radius) !important;
+        border: 1px solid var(--border-default) !important;
         padding: 4px !important;
         min-width: 0 !important;
     }
@@ -255,24 +274,25 @@ st.markdown("""
         border: none !important;
         padding: 6px 12px !important;
         min-height: 0 !important;
-        font-size: 13px !important;
-        border-radius: var(--radius-sm) !important;
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 12px !important;
+        border-radius: var(--radius) !important;
     }
     [data-testid="stPopoverBody"] button:hover {
-        background: var(--bg-inset) !important;
-        color: var(--accent) !important;
+        background: var(--accent-hover-light) !important;
+        color: var(--accent-hover) !important;
     }
     [data-testid="stPopoverBody"] button [data-testid="stMarkdownContainer"] p {
         color: inherit !important;
-        font-size: 13px !important;
+        font-size: 12px !important;
         margin: 0 !important;
     }
 
     /* ====== CHAT MESSAGES ====== */
     [data-testid="stChatMessage"] {
-        background: var(--bg-base) !important;
+        background: var(--bg-elevated) !important;
         border: 1px solid var(--border-default) !important;
-        border-radius: var(--radius-md) !important;
+        border-radius: var(--radius) !important;
         margin-bottom: 8px !important;
         padding: 16px !important;
     }
@@ -281,27 +301,28 @@ st.markdown("""
     [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] li {
         color: var(--fg-primary) !important;
     }
+    /* User messages — slate left border */
     [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
         border-left: 3px solid var(--accent) !important;
-        background: var(--bg-elevated) !important;
     }
+    /* Assistant messages — brick-red left border */
     [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
-        border-left: 3px solid var(--accent-warm) !important;
-        background: var(--bg-base) !important;
+        border-left: 3px solid var(--accent-hover) !important;
     }
     [data-testid="stChatMessage"] hr {
         border-color: var(--border-default) !important;
     }
     [data-testid="stChatMessage"] strong {
-        color: var(--accent) !important;
+        color: var(--accent-dark) !important;
     }
     /* Part numbers monospace */
     [data-testid="stChatMessage"] code {
         font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace !important;
         font-size: 12px !important;
         background: var(--bg-inset) !important;
+        border: 1px solid var(--border-default) !important;
         padding: 2px 6px !important;
-        border-radius: 4px !important;
+        border-radius: var(--radius) !important;
         color: var(--fg-primary) !important;
     }
 
@@ -309,22 +330,22 @@ st.markdown("""
     [data-testid="stChatInput"],
     .stChatInput, .stChatInput > div, .stChatInput > div > div,
     .stChatInput > div > div > div, .stChatInput div {
-        background-color: var(--bg-base) !important;
+        background-color: var(--bg-elevated) !important;
     }
     .stChatInput textarea {
-        background-color: var(--bg-base) !important;
+        background-color: var(--bg-elevated) !important;
         color: var(--fg-primary) !important;
-        font-family: system-ui, -apple-system, sans-serif !important;
-        font-size: 14px !important;
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 13px !important;
     }
     [data-testid="stChatInputTextArea"] {
-        font-family: system-ui, -apple-system, sans-serif !important;
-        font-size: 14px !important;
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 13px !important;
         color: var(--fg-primary) !important;
     }
     .stChatInput {
-        border: 1px solid var(--border-strong) !important;
-        border-radius: var(--radius-md) !important;
+        border: 1px solid var(--border-default) !important;
+        border-radius: var(--radius) !important;
     }
     .stChatInput:focus-within {
         border-color: var(--accent) !important;
@@ -332,10 +353,10 @@ st.markdown("""
     .stChatInput button {
         background-color: var(--accent) !important;
         color: #ffffff !important;
-        border-radius: var(--radius-sm) !important;
+        border-radius: var(--radius) !important;
     }
     .stChatInput button:hover {
-        background-color: var(--accent-hover) !important;
+        background-color: var(--accent-dark) !important;
     }
     .stChatInput button svg {
         fill: #ffffff !important;
@@ -343,8 +364,8 @@ st.markdown("""
     }
 
     /* ====== LINKS ====== */
-    a { color: var(--accent) !important; }
-    a:hover { color: var(--accent-hover) !important; text-decoration: underline !important; }
+    a { color: var(--accent-hover) !important; }
+    a:hover { color: var(--accent-dark) !important; text-decoration: underline !important; }
 
     /* ====== BACKGROUNDS — clean up Streamlit defaults ====== */
     header[data-testid="stHeader"] {
@@ -361,59 +382,69 @@ st.markdown("""
     }
     [data-testid="stMainBlockContainer"] { background-color: var(--bg-base) !important; }
     .stApp > div, .stApp > div > div { background-color: transparent !important; }
-    [data-testid="stPopover"] > div { background-color: var(--bg-base) !important; border: 1px solid var(--border-default) !important; }
+    [data-testid="stPopover"] > div { background-color: var(--bg-elevated) !important; border: 1px solid var(--border-default) !important; }
 
     /* ====== SPINNER ====== */
     [data-testid="stSpinner"] { color: var(--accent) !important; }
 
     /* ====== LANDING PAGE ====== */
-    .landing-container {
-        max-width: 440px;
-        margin: 80px auto 0 auto;
+    .landing-header {
+        background: var(--accent-dark);
+        margin: -1rem -1rem 0 -1rem;
+        padding: 32px 24px 24px 24px;
+        text-align: center;
+        border-bottom: 1px solid var(--border-strong);
+    }
+    .landing-header-title {
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 22px;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0 0 8px 0;
+    }
+    [data-testid="stMarkdownContainer"] .landing-header-desc {
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 13px !important;
+        color: rgba(255, 255, 255, 0.75) !important;
+        line-height: 1.6 !important;
+        margin: 0 !important;
+        max-width: 420px;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+    .landing-body {
+        max-width: 420px;
+        margin: 32px auto 0 auto;
         text-align: center;
         padding: 0 16px;
     }
-    .landing-icon {
-        font-size: 48px;
-        margin-bottom: 16px;
-    }
-    .landing-title {
-        font-size: 24px;
-        font-weight: 600;
-        color: var(--fg-primary);
-        margin: 0 0 8px 0;
-        letter-spacing: -0.3px;
-    }
-    .landing-desc {
-        font-size: 14px;
-        color: var(--fg-secondary);
-        line-height: 1.6;
-        margin: 0 0 32px 0;
-    }
-    .landing-footer {
-        font-size: 12px;
-        color: var(--fg-muted);
+    [data-testid="stMarkdownContainer"] .landing-footer {
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 12px !important;
+        color: var(--fg-muted) !important;
         margin-top: 16px;
     }
     .landing-stats {
         display: flex;
         justify-content: center;
         gap: 32px;
-        margin-top: 32px;
-        padding-top: 24px;
+        margin-top: 24px;
+        padding-top: 20px;
         border-top: 1px solid var(--border-default);
     }
     .landing-stat {
         text-align: center;
     }
     .landing-stat-value {
-        font-size: 20px;
-        font-weight: 600;
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 18px;
+        font-weight: 700;
         color: var(--fg-primary);
     }
-    .landing-stat-label {
-        font-size: 11px;
-        color: var(--fg-muted);
+    [data-testid="stMarkdownContainer"] .landing-stat-label {
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 11px !important;
+        color: var(--fg-muted) !important;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-top: 2px;
@@ -427,23 +458,27 @@ st.markdown("""
         margin-bottom: 24px;
     }
     .onboard-title {
-        font-size: 22px !important;
-        font-weight: 600 !important;
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
         color: var(--fg-primary) !important;
         margin: 0 0 4px 0 !important;
         line-height: 1.3 !important;
+        border: none !important;
+        padding: 0 !important;
     }
     .onboard-sub {
+        font-family: Verdana, Geneva, sans-serif !important;
         font-size: 13px;
         color: var(--fg-secondary);
         margin: 0;
     }
 
     /* Override Streamlit heading defaults inside our custom containers */
-    [data-testid="stMarkdownContainer"] .landing-title,
+    [data-testid="stMarkdownContainer"] .landing-header-title,
     [data-testid="stMarkdownContainer"] .onboard-title,
     [data-testid="stMarkdownContainer"] .app-header-title {
-        font-family: system-ui, -apple-system, sans-serif !important;
+        font-family: Verdana, Geneva, sans-serif !important;
         border: none !important;
         padding: 0 !important;
     }
@@ -451,12 +486,12 @@ st.markdown("""
     /* ====== FORM STYLING ====== */
     [data-testid="stForm"] {
         border: 1px solid var(--border-default) !important;
-        border-radius: var(--radius-lg) !important;
+        border-radius: var(--radius) !important;
         padding: 24px !important;
-        background: var(--bg-base) !important;
+        background: var(--bg-elevated) !important;
     }
 
-    /* ====== SIDEBAR DIVIDERS — subtle ====== */
+    /* ====== SIDEBAR DIVIDERS ====== */
     section[data-testid="stSidebar"] hr {
         border-color: var(--border-default) !important;
         margin: 4px 0 !important;
@@ -464,22 +499,23 @@ st.markdown("""
 
     /* ====== SIDEBAR EDIT PROFILE BUTTON ====== */
     section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
-        font-size: 12px;
+        font-size: 11px;
         color: var(--fg-muted);
     }
     section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
-        color: var(--accent);
+        color: var(--accent-hover);
     }
 
     /* ====== USER INFO (sidebar bottom) ====== */
     .user-info {
-        font-size: 12px;
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 11px;
         color: var(--fg-muted);
         padding: 4px 0;
     }
     .user-info strong {
         color: var(--fg-secondary) !important;
-        font-weight: 500;
+        font-weight: 700;
     }
 
     /* ====== EMPTY STATE ====== */
@@ -488,20 +524,43 @@ st.markdown("""
         padding: 64px 24px;
         color: var(--fg-muted);
     }
-    .empty-state-icon {
-        font-size: 36px;
-        margin-bottom: 12px;
+    [data-testid="stMarkdownContainer"] .empty-state-title {
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        color: var(--fg-secondary) !important;
+        margin: 0 0 4px 0 !important;
     }
-    .empty-state-title {
-        font-size: 15px;
-        font-weight: 500;
-        color: var(--fg-secondary);
-        margin: 0 0 4px 0;
+    [data-testid="stMarkdownContainer"] .empty-state-desc {
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 13px !important;
+        color: var(--fg-muted) !important;
+        margin: 0 !important;
     }
-    .empty-state-desc {
-        font-size: 13px;
-        color: var(--fg-muted);
-        margin: 0;
+
+    /* ====== STREAMLIT BUTTON OVERRIDES (forms, primary) ====== */
+    .stApp [data-testid="stBaseButton-primary"] {
+        background-color: var(--accent) !important;
+        border-color: var(--accent) !important;
+        border-radius: var(--radius) !important;
+        font-family: Verdana, Geneva, sans-serif !important;
+    }
+    .stApp [data-testid="stBaseButton-primary"]:hover {
+        background-color: var(--accent-dark) !important;
+        border-color: var(--accent-dark) !important;
+    }
+
+    /* ====== STREAMLIT INPUT OVERRIDES ====== */
+    .stApp [data-testid="stTextInput"] input,
+    .stApp [data-testid="stTextArea"] textarea,
+    .stApp [data-testid="stSelectbox"] > div > div {
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 13px !important;
+        border-radius: var(--radius) !important;
+    }
+    .stApp label {
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 13px !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -528,15 +587,16 @@ except Exception:
 if not _is_logged_in:
     # --- Landing page ---
     st.markdown("""
-    <div class="landing-container">
-        <div class="landing-icon">🔧</div>
-        <div class="landing-title">993 Repair Assistant</div>
-        <p class="landing-desc">
+    <div class="landing-header">
+        <div class="landing-header-title">993 Repair Assistant</div>
+        <p class="landing-header-desc">
             Expert repair advice for your Porsche 993, powered by
             real forum knowledge from Pelican Parts, Rennlist, 911uk, and more.
         </p>
     </div>
     """, unsafe_allow_html=True)
+
+    st.markdown('<div class="landing-body">', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1.2, 2, 1.2])
     with col2:
@@ -544,7 +604,6 @@ if not _is_logged_in:
                   use_container_width=True, type="primary")
 
     st.markdown("""
-    <div class="landing-container" style="margin-top: 0;">
         <p class="landing-footer">
             Sign in to save your chat history and get advice tailored to your car.
         </p>
@@ -627,7 +686,7 @@ def _show_onboarding():
 
     with st.form("car_profile_form"):
         vin = st.text_input(
-            "VIN (optional — auto-fills fields below)",
+            "VIN (optional -- auto-fills fields below)",
             max_chars=17,
             placeholder="WP0CB2960VS320001",
         )
@@ -818,7 +877,7 @@ if "show_edit_profile" not in st.session_state:
 
 with st.sidebar:
     # --- New chat button ---
-    if st.button("＋ New chat", use_container_width=True, type="primary"):
+    if st.button("+ New Chat", use_container_width=True, type="primary"):
         st.session_state.current_conv_id = None
         st.session_state.messages = []
         st.rerun()
@@ -862,7 +921,7 @@ with st.sidebar:
 
             # Delete confirmation
             if st.session_state.confirm_delete == conv_id:
-                st.warning(f"Delete **{title}**?", icon="⚠️")
+                st.warning(f"Delete **{title}**?")
                 dc1, dc2 = st.columns(2)
                 with dc1:
                     if st.button("Delete", key=f"yes_{conv_id}", use_container_width=True):
@@ -906,7 +965,7 @@ with st.sidebar:
             # Conversation row
             cols = st.columns([5, 1])
             with cols[0]:
-                btn_label = f"{'▸ ' if is_active else '  '}{title}"
+                btn_label = f"{'> ' if is_active else '  '}{title}"
                 if st.button(btn_label, key=f"conv_{conv_id}",
                              use_container_width=True, disabled=is_active):
                     loaded = load_conversation(conv_id, user_id=user_id)
@@ -918,7 +977,7 @@ with st.sidebar:
                         st.rerun()
 
             with cols[1]:
-                with st.popover("···", use_container_width=True):
+                with st.popover("...", use_container_width=True):
                     if st.button("Rename", key=f"ren_{conv_id}", use_container_width=True):
                         st.session_state.editing_conv_id = conv_id
                         st.rerun()
@@ -928,14 +987,14 @@ with st.sidebar:
 
     st.divider()
 
-    # --- Car info card ---
+    # --- Car info card (Rennlist thead-style) ---
     car_year = car_profile.get("year", "")
     car_model = car_profile.get("model", "993")
     car_trans = car_profile.get("transmission", "")
     car_miles = car_profile.get("mileage", "")
     car_line = f"{car_year} 993 {car_model}"
     if car_trans:
-        car_line += f" · {car_trans}"
+        car_line += f" &middot; {car_trans}"
 
     miles_line = ""
     if car_miles:
@@ -943,14 +1002,16 @@ with st.sidebar:
 
     st.markdown(f"""
     <div class="car-info-card">
-        <p class="card-label">Your car</p>
-        <p class="card-value">{car_line}</p>
-        {miles_line}
-        <p class="card-label">Knowledge base</p>
-        <p class="card-value">{chunk_count:,} chunks indexed</p>
-        <p class="card-sources">
-            Pelican Parts · Rennlist · 911uk · 6SpeedOnline · TIPEC · Carpokes · YouTube
-        </p>
+        <div class="card-header">Your 993</div>
+        <div class="card-body">
+            <p class="card-value">{car_line}</p>
+            {miles_line}
+            <p class="card-label">Knowledge base</p>
+            <p class="card-value">{chunk_count:,} chunks indexed</p>
+            <p class="card-sources">
+                Pelican Parts &middot; Rennlist &middot; 911uk &middot; 6SpeedOnline &middot; TIPEC &middot; Carpokes &middot; YouTube
+            </p>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -984,17 +1045,17 @@ if st.session_state.show_edit_profile:
 # MAIN CHAT AREA
 # ======================================================================
 
-# Header
+# Header (dark slate bar)
 car_badge_text = f"{car_profile.get('year', '')} {car_profile.get('model', '')}"
 if car_profile.get("transmission"):
-    car_badge_text += f" · {car_profile['transmission']}"
+    car_badge_text += f" &middot; {car_profile['transmission']}"
 if car_profile.get("mileage"):
-    car_badge_text += f" · ~{car_profile['mileage']} mi"
+    car_badge_text += f" &middot; ~{car_profile['mileage']} mi"
 
 st.markdown(f"""
 <div class="app-header">
-    <div class="app-header-title">🔧 993 Repair Assistant</div>
-    <p class="app-header-sub">Ask anything about your Porsche 993 — powered by real forum knowledge.</p>
+    <div class="app-header-title">993 Repair Assistant</div>
+    <p class="app-header-sub">Ask anything about your Porsche 993 &mdash; powered by real forum knowledge.</p>
     <span class="app-car-tag">{car_badge_text.strip()}</span>
 </div>
 """, unsafe_allow_html=True)
@@ -1003,7 +1064,6 @@ st.markdown(f"""
 if not st.session_state.messages:
     st.markdown("""
     <div class="empty-state">
-        <div class="empty-state-icon">💬</div>
         <p class="empty-state-title">Start a conversation</p>
         <p class="empty-state-desc">Ask about repairs, maintenance, part numbers, or troubleshooting.</p>
     </div>
@@ -1081,7 +1141,7 @@ Please provide a helpful, practical answer based on this knowledge."""
 
             source_md = ""
             if unique_urls:
-                source_md = "\n\n---\n**📚 Sources**\n"
+                source_md = "\n\n---\n**Sources**\n"
                 source_md += "\n".join(
                     f"- [{t}]({u}) *({s})*" for t, u, s in unique_urls
                 )
