@@ -10,7 +10,6 @@ Usage:
 import os
 import re
 import sys
-import requests as _requests
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -18,7 +17,6 @@ load_dotenv(Path(__file__).parent.parent / ".env", override=True)
 
 INDEX_NAME = "porsche-993"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-HF_API_URL = f"https://api-inference.huggingface.co/models/{EMBEDDING_MODEL}"
 
 # How many chunks to retrieve per query
 TOP_K = 15
@@ -152,42 +150,60 @@ def generate_parts_links(part_numbers: list[str]) -> str:
 _index = None
 
 
+_hf_client = None
+
+
+def _get_hf_client():
+    """Lazy-load the HuggingFace InferenceClient."""
+    global _hf_client
+    if _hf_client is None:
+        from huggingface_hub import InferenceClient
+        api_key = os.getenv("HF_API_KEY", "") or None
+        _hf_client = InferenceClient(token=api_key)
+    return _hf_client
+
+
 def _embed_query(text: str) -> list[float]:
     """Get query embedding from the HuggingFace Inference API.
 
     Uses the same all-MiniLM-L6-v2 model that was used at index-build time,
     so vectors are compatible with existing Pinecone data.
+
+    Uses the huggingface_hub InferenceClient which handles the new
+    router.huggingface.co endpoints automatically.
     """
-    api_key = os.getenv("HF_API_KEY", "")
-    headers = {}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
+    client = _get_hf_client()
 
-    resp = _requests.post(
-        HF_API_URL,
-        headers=headers,
-        json={"inputs": text, "options": {"wait_for_model": True}},
-        timeout=30,
-    )
-    resp.raise_for_status()
-    result = resp.json()
+    try:
+        result = client.feature_extraction(
+            text=text,
+            model=EMBEDDING_MODEL,
+        )
+    except Exception as e:
+        err_str = str(e).lower()
+        if "401" in err_str or "unauthorized" in err_str:
+            raise RuntimeError(
+                "HuggingFace API returned 401 Unauthorized. "
+                "Your HF_API_KEY may be missing or may need 'Inference Providers' "
+                "permission. Create a new token at https://huggingface.co/settings/tokens "
+                "with 'Make calls to Inference Providers' enabled."
+            ) from e
+        raise
 
-    # HF feature-extraction returns token-level embeddings: [[tok1], [tok2], ...]
-    # We mean-pool them to get the sentence embedding (same as sentence-transformers).
+    # InferenceClient returns a numpy array or list of shape (dim,) or (1, dim)
+    import numpy as np
+    if isinstance(result, np.ndarray):
+        if result.ndim == 2:
+            return result[0].tolist()
+        return result.tolist()
+
+    # Fallback: raw list handling
     if isinstance(result, list) and len(result) > 0:
         if isinstance(result[0], list):
-            # 2-D: token embeddings -> mean pool
-            num_tokens = len(result)
-            dim = len(result[0])
-            return [
-                sum(result[t][d] for t in range(num_tokens)) / num_tokens
-                for d in range(dim)
-            ]
-        else:
-            # 1-D: already a sentence embedding
-            return result
+            return result[0] if len(result) == 1 else result
+        return result
 
-    raise ValueError(f"Unexpected HF API response shape: {type(result)}")
+    raise ValueError(f"Unexpected embedding response shape: {type(result)}")
 
 
 def _get_index():
