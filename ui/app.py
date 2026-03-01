@@ -849,6 +849,23 @@ except Exception as e:
 
 
 # ======================================================================
+# IMAGE INDEX (for enriching responses with forum/article images)
+# ======================================================================
+
+@st.cache_resource
+def _load_image_index():
+    """Load the article-URL-to-images mapping (built by scripts/build_image_index.py)."""
+    import json
+    index_path = Path(__file__).parent.parent / "data" / "image_index.json"
+    if index_path.exists():
+        with open(index_path) as f:
+            return json.load(f)
+    return {}
+
+_image_index = _load_image_index()
+
+
+# ======================================================================
 # CHAT STORE (per-user)
 # ======================================================================
 
@@ -1069,17 +1086,106 @@ if not st.session_state.messages:
     </div>
     """, unsafe_allow_html=True)
 
+# ---- Helper: render a message (text + optional images) ----
+_IMG_URL_RE = re.compile(r'(https?://\S+\.(?:jpg|jpeg|png|gif|JPG|JPEG|PNG|GIF))')
+
+
+def _render_message(msg):
+    """Render a chat message, handling optional user-uploaded images
+    and inline image URLs in assistant responses."""
+    # User-uploaded images (loaded from S3)
+    if msg.get("images"):
+        from api.image_utils import load_image_from_s3
+        for img_ref in msg["images"]:
+            img_data = load_image_from_s3(img_ref["s3_key"])
+            if img_data:
+                st.image(img_data, width=400)
+            else:
+                st.caption(f"[Image: {img_ref.get('filename', 'unavailable')}]")
+
+    # Text content
+    content = msg.get("content", "")
+    if not content:
+        return
+
+    if msg["role"] == "assistant":
+        # Split response on image URLs and render images inline
+        parts = _IMG_URL_RE.split(content)
+        for part in parts:
+            if _IMG_URL_RE.match(part):
+                try:
+                    st.image(part, width=500)
+                except Exception:
+                    st.caption("[Image unavailable]")
+            elif part.strip():
+                st.markdown(part)
+    else:
+        st.markdown(content)
+
+
 # Chat messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+        _render_message(msg)
 
-# Chat input
-if prompt := st.chat_input("Ask about your 993..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+# Chat input (with image upload support)
+chat_value = st.chat_input(
+    "Ask about your 993...",
+    accept_file="multiple",
+    file_type=["jpg", "jpeg", "png", "webp"],
+)
+if chat_value:
+    # Extract text and files from the chat input value
+    if hasattr(chat_value, "text"):
+        prompt = chat_value.text or ""
+        uploaded_files = list(chat_value.files) if hasattr(chat_value, "files") and chat_value.files else []
+    else:
+        prompt = str(chat_value)
+        uploaded_files = []
+
+    if not prompt.strip() and not uploaded_files:
+        st.stop()
+
+    # Process uploaded images
+    image_refs = []
+    image_b64_blocks = []
+    if uploaded_files:
+        from api.image_utils import process_uploaded_image, image_to_base64, upload_image_to_s3
+        for uf in uploaded_files[:3]:  # max 3 images per message
+            try:
+                processed, media_type, fname = process_uploaded_image(uf)
+                s3_key = upload_image_to_s3(processed, user_id, fname)
+                image_refs.append({
+                    "s3_key": s3_key,
+                    "media_type": media_type,
+                    "filename": fname,
+                })
+                image_b64_blocks.append({
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": media_type,
+                        "data": image_to_base64(processed),
+                    }
+                })
+            except Exception as e:
+                st.warning(f"Could not process image: {e}")
+
+    # Store user message
+    user_msg = {"role": "user", "content": prompt}
+    if image_refs:
+        user_msg["images"] = image_refs
+    st.session_state.messages.append(user_msg)
+
+    # Display user message
     with st.chat_message("user"):
-        st.markdown(prompt)
+        if uploaded_files:
+            for uf in uploaded_files[:3]:
+                st.image(uf, width=400)
+        if prompt:
+            st.markdown(prompt)
 
+    # Generate assistant response
     with st.chat_message("assistant"):
         with st.spinner("Searching forum knowledge..."):
             from api.chat import (
@@ -1090,29 +1196,56 @@ if prompt := st.chat_input("Ask about your 993..."):
             import anthropic
 
             # Rewrite follow-up questions to include conversation context
-            # so the RAG search finds relevant chunks
-            search_query = rewrite_follow_up(prompt, st.session_state.messages[:-1])
+            search_query = rewrite_follow_up(prompt or "Describe what you see in the image", st.session_state.messages[:-1])
             sources = search(search_query)
             context = build_context(sources)
+
+            # Enrich context with forum images from the image index
+            if _image_index:
+                source_images = []
+                for s in sources[:5]:
+                    src_url = s.get("url", "")
+                    if src_url in _image_index:
+                        for img in _image_index[src_url][:3]:
+                            source_images.append(img)
+                if source_images:
+                    context += "\n\nAVAILABLE REPAIR IMAGES FROM SOURCES:\n"
+                    for img in source_images[:6]:
+                        alt = img.get("alt", "repair photo")
+                        context += f"- {alt}: {img['src']}\n"
+
             system_prompt = build_system_prompt(car_profile)
             car_desc = _car_description(car_profile)
 
+            # Build conversation history for Claude
+            # Don't re-send old images (expensive) — substitute a text note
             previous = st.session_state.messages[-11:-1]
-            claude_messages = [
-                {"role": m["role"], "content": m["content"]} for m in previous
-            ]
+            claude_messages = []
+            for m in previous:
+                if m.get("images") and m["role"] == "user":
+                    note = f"{m['content']} [user attached {len(m['images'])} photo(s)]"
+                    claude_messages.append({"role": "user", "content": note})
+                else:
+                    claude_messages.append({"role": m["role"], "content": m["content"]})
 
-            user_message = f"""Based on the following knowledge from Porsche forums and technical articles,
+            # Build current user message (with images if present)
+            user_text = f"""Based on the following knowledge from Porsche forums and technical articles,
 answer this question about the owner's {car_desc}:
 
-QUESTION: {prompt}
+QUESTION: {prompt or "Please analyze the attached image(s)."}
 
 FORUM KNOWLEDGE:
 {context}
 
 Please provide a helpful, practical answer based on this knowledge."""
 
-            claude_messages.append({"role": "user", "content": user_message})
+            if image_b64_blocks:
+                # Multimodal: text + image content blocks
+                content_blocks = [{"type": "text", "text": user_text}]
+                content_blocks.extend(image_b64_blocks)
+                claude_messages.append({"role": "user", "content": content_blocks})
+            else:
+                claude_messages.append({"role": "user", "content": user_text})
 
             api_key = os.getenv("ANTHROPIC_API_KEY")
             if not api_key or api_key == "your_anthropic_api_key_here":
@@ -1161,7 +1294,7 @@ Please provide a helpful, practical answer based on this knowledge."""
     if st.session_state.current_conv_id is None:
         conv_id = new_conversation_id()
         st.session_state.current_conv_id = conv_id
-        title = generate_title(prompt)
+        title = generate_title(prompt or "Image analysis")
         st.session_state.conv_index.append({
             "id": conv_id, "title": title,
             "created_at": now, "updated_at": now,

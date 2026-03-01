@@ -3,10 +3,13 @@
 venv/
 .venv/
 
-# Data (too large for git)
-data/
+# Data (too large for git — keep image_index.json for deployment)
+data/raw/
+data/cleaned/
+data/chunks/
+data/embeddings/
 *.json
-!requirements.txt
+!data/image_index.json
 
 # PDFs
 *.pdf

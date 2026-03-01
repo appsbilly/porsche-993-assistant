@@ -105,6 +105,15 @@ RULES:
    know what they drive. Just give relevant, tailored advice.
 8. When discussing repairs that require parts, always mention the OEM part
    numbers if they appear in the forum knowledge so the owner can order them.
+9. When the user shares photos of their car, parts, or issues:
+   - Describe what you see in the image clearly and specifically.
+   - Identify any parts, damage, wear patterns, leaks, or issues visible.
+   - Cross-reference what you see with the forum knowledge provided.
+   - If you can identify part numbers or specific components, mention them.
+   - Be specific about location and severity of any visible issues.
+10. When your source context references repair photos, diagrams, or step-by-step
+    images, describe what those images would show so the user understands the
+    procedure visually.
 
 When you reference source material, mention the source forum and thread topic
 so the user can look it up for more detail."""
@@ -146,6 +155,8 @@ def rewrite_follow_up(prompt: str, conversation_history: list[dict]) -> str:
         role = "User" if msg["role"] == "user" else "Assistant"
         # Truncate long assistant messages to just the first ~200 chars
         content = msg["content"]
+        if role == "User" and msg.get("images"):
+            content += f" [attached {len(msg['images'])} photo(s)]"
         if role == "Assistant" and len(content) > 300:
             content = content[:300] + "..."
         conv_lines.append(f"{role}: {content}")

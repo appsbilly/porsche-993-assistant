@@ -92,9 +92,24 @@ def save_conversation(conv_id: str, messages: list[dict], user_id: str | None = 
 
 
 def delete_conversation(conv_id: str, index: list[dict], user_id: str | None = None) -> list[dict]:
-    """Delete a conversation from S3 and return updated index."""
+    """Delete a conversation from S3, clean up associated images, and return updated index."""
     try:
         s3 = _get_s3()
+        # Load conversation to find image S3 keys
+        conv = load_conversation(conv_id, user_id=user_id)
+        if conv:
+            image_keys = []
+            for msg in conv:
+                for img in msg.get("images", []):
+                    if img.get("s3_key"):
+                        image_keys.append(img["s3_key"])
+            # Delete images (best-effort)
+            for img_key in image_keys:
+                try:
+                    s3.delete_object(Bucket=_bucket(), Key=img_key)
+                except Exception:
+                    pass
+        # Delete conversation file
         key = f"{_prefix(user_id)}/{conv_id}.json"
         s3.delete_object(Bucket=_bucket(), Key=key)
     except Exception:
