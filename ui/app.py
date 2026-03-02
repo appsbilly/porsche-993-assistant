@@ -538,29 +538,67 @@ st.markdown("""
         margin: 0 !important;
     }
 
-    /* ====== STREAMLIT BUTTON OVERRIDES (forms, primary) ====== */
-    .stApp [data-testid="stBaseButton-primary"] {
+    /* ====== STREAMLIT BUTTON OVERRIDES (primary + form submit) ====== */
+    .stApp [data-testid="stBaseButton-primary"],
+    .stApp [data-testid="stBaseButton-primaryFormSubmit"] {
         background-color: var(--accent) !important;
         border-color: var(--accent) !important;
         border-radius: var(--radius) !important;
         font-family: Verdana, Geneva, sans-serif !important;
+        color: #ffffff !important;
     }
-    .stApp [data-testid="stBaseButton-primary"]:hover {
+    .stApp [data-testid="stBaseButton-primary"]:hover,
+    .stApp [data-testid="stBaseButton-primaryFormSubmit"]:hover {
         background-color: var(--accent-dark) !important;
         border-color: var(--accent-dark) !important;
+    }
+    .stApp [data-testid="stBaseButton-secondaryFormSubmit"] {
+        background-color: var(--bg-elevated) !important;
+        border: 1px solid var(--border-default) !important;
+        border-radius: var(--radius) !important;
+        font-family: Verdana, Geneva, sans-serif !important;
+        color: var(--fg-primary) !important;
+    }
+    .stApp [data-testid="stBaseButton-secondaryFormSubmit"]:hover {
+        background-color: var(--bg-inset) !important;
+        border-color: var(--accent) !important;
     }
 
     /* ====== STREAMLIT INPUT OVERRIDES ====== */
     .stApp [data-testid="stTextInput"] input,
-    .stApp [data-testid="stTextArea"] textarea,
+    .stApp [data-testid="stTextArea"] textarea {
+        font-family: Verdana, Geneva, sans-serif !important;
+        font-size: 13px !important;
+        border-radius: var(--radius) !important;
+        border: 1px solid var(--border-default) !important;
+        background-color: var(--bg-base) !important;
+    }
+    .stApp [data-testid="stTextInput"] input:focus,
+    .stApp [data-testid="stTextArea"] textarea:focus {
+        border-color: var(--accent) !important;
+    }
     .stApp [data-testid="stSelectbox"] > div > div {
         font-family: Verdana, Geneva, sans-serif !important;
         font-size: 13px !important;
         border-radius: var(--radius) !important;
+        border: 1px solid var(--border-default) !important;
+        background-color: var(--bg-base) !important;
     }
     .stApp label {
         font-family: Verdana, Geneva, sans-serif !important;
         font-size: 13px !important;
+    }
+
+    /* ====== PRIMARY BUTTON TEXT (white on accent) ====== */
+    .stApp [data-testid="stBaseButton-primary"] p,
+    .stApp [data-testid="stBaseButton-primary"] span,
+    .stApp [data-testid="stBaseButton-primaryFormSubmit"] p,
+    .stApp [data-testid="stBaseButton-primaryFormSubmit"] span {
+        color: #ffffff !important;
+    }
+    .stApp [data-testid="stBaseButton-secondaryFormSubmit"] p,
+    .stApp [data-testid="stBaseButton-secondaryFormSubmit"] span {
+        color: var(--fg-primary) !important;
     }
 </style>
 """, unsafe_allow_html=True)
