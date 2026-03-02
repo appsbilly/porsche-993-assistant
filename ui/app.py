@@ -570,7 +570,7 @@ st.markdown("""
 # AUTHENTICATION — Google Login via st.login()
 # ======================================================================
 
-from api.auth import user_id_from_email, load_user_profile, save_user_profile, decode_vin
+from api.auth import user_id_from_email, load_user_profile, save_user_profile
 
 # Dev mode: bypass auth when [auth] secrets aren't configured (local development)
 _DEV_MODE = False
@@ -661,7 +661,6 @@ if "car_profile" not in st.session_state:
     if _DEV_MODE:
         # In dev mode, use a default profile so we can preview the main UI
         st.session_state.car_profile = {
-            "vin": "",
             "year": "1997",
             "model": "Targa",
             "transmission": "Tiptronic",
@@ -678,19 +677,13 @@ def _show_onboarding():
     st.markdown("""
     <div class="onboard-header">
         <div class="onboard-title">Set up your car profile</div>
-        <p class="onboard-sub">We'll personalize all advice to your specific 993.</p>
+        <p class="onboard-sub">Tell us about your 993 so we can tailor advice. All fields are optional.</p>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown(f"Welcome, **{display_name}**.")
 
     with st.form("car_profile_form"):
-        vin = st.text_input(
-            "VIN (optional -- auto-fills fields below)",
-            max_chars=17,
-            placeholder="WP0CB2960VS320001",
-        )
-
         col1, col2 = st.columns(2)
         with col1:
             year = st.selectbox(
@@ -724,20 +717,7 @@ def _show_onboarding():
         submitted = st.form_submit_button("Save & start chatting", type="primary", use_container_width=True)
 
         if submitted:
-            if vin and len(vin) == 17:
-                decoded = decode_vin(vin)
-                if decoded:
-                    if not year and decoded.get("year"):
-                        year = decoded["year"]
-                    if not model and decoded.get("model"):
-                        model = decoded["model"]
-
-            if not year or not model:
-                st.error("Please select at least the year and model.")
-                return False
-
             profile = {
-                "vin": vin.strip() if vin else "",
                 "year": year,
                 "model": model,
                 "transmission": transmission,
@@ -763,8 +743,6 @@ def _show_edit_profile():
     """, unsafe_allow_html=True)
 
     with st.form("edit_profile_form"):
-        vin = st.text_input("VIN (optional)", value=profile.get("vin", ""), max_chars=17)
-
         col1, col2 = st.columns(2)
         years_list = [""] + [str(y) for y in range(1998, 1988, -1)]
         models_list = [
@@ -801,7 +779,6 @@ def _show_edit_profile():
 
         if save_clicked:
             updated = {
-                "vin": vin.strip(),
                 "year": year,
                 "model": model,
                 "transmission": transmission,
