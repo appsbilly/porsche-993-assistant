@@ -1007,31 +1007,28 @@ with st.sidebar:
 
     # --- Car info card (Rennlist thead-style) ---
     car_year = car_profile.get("year", "")
-    car_model = car_profile.get("model", "993")
+    car_model = car_profile.get("model", "")
     car_trans = car_profile.get("transmission", "")
     car_miles = car_profile.get("mileage", "")
-    car_line = f"{car_year} 993 {car_model}"
+
+    # Build car details lines (skip empty fields)
+    car_details_html = ""
+    car_parts = [p for p in [car_year, "993", car_model] if p]
+    car_line = " ".join(car_parts)
     if car_trans:
         car_line += f" &middot; {car_trans}"
-
-    miles_line = ""
+    if car_line.strip() and car_line.strip() != "993":
+        car_details_html += f'<p class="card-value">{car_line}</p>'
     if car_miles:
-        miles_line = f'<p class="card-value">~{car_miles} mi</p>'
+        car_details_html += f'<p class="card-value">~{car_miles} mi</p>'
 
-    st.markdown(f"""
-    <div class="car-info-card">
-        <div class="card-header">Your 993</div>
-        <div class="card-body">
-            <p class="card-value">{car_line}</p>
-            {miles_line}
-            <p class="card-label">Knowledge from</p>
-            <p class="card-value">{chunk_count:,} posts &middot; 20+ years</p>
-            <p class="card-sources">
-                Pelican Parts &middot; Rennlist &middot; 911uk &middot; 6SpeedOnline &middot; TIPEC &middot; Carpokes &middot; YouTube
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div class="car-info-card">
+<div class="card-header">Your 993</div>
+<div class="card-body">
+{car_details_html}<p class="card-label">Knowledge from</p>
+<p class="card-value">{chunk_count:,} posts &middot; 20+ years</p>
+<p class="card-sources">Pelican Parts &middot; Rennlist &middot; 911uk &middot; 6SpeedOnline &middot; TIPEC &middot; Carpokes &middot; YouTube</p>
+</div></div>""", unsafe_allow_html=True)
 
     st.markdown("")
 
