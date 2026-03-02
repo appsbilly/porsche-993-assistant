@@ -920,6 +920,7 @@ from api.chat_store import (
     load_index, save_index, load_conversation, save_conversation,
     generate_title, new_conversation_id, delete_conversation,
 )
+from api.analytics import log_query
 
 if "conv_index" not in st.session_state:
     st.session_state.conv_index = load_index(user_id=user_id)
@@ -1347,6 +1348,17 @@ Please provide a helpful, practical answer based on this knowledge."""
         "role": "assistant",
         "content": full_response,
     })
+
+    # Log analytics (best-effort, never blocks chat)
+    log_query(
+        user_type="guest" if _GUEST else "signed_in",
+        query=prompt or "Image analysis",
+        response=full_response,
+        conv_id=st.session_state.current_conv_id,
+        sources_count=len(sources) if sources else 0,
+        car_profile=car_profile,
+        has_images=bool(uploaded_files),
+    )
 
     # Persist conversations for signed-in users only
     if user_id:

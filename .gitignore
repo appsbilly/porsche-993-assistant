@@ -31,7 +31,6 @@ Thumbs.db
 
 # Scrapers (not needed for deployment)
 scrapers/
-scripts/
 processing/
 embeddings/
 
