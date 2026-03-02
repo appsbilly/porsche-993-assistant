@@ -23,9 +23,18 @@ load_dotenv(Path(__file__).parent.parent / ".env", override=True)
 # --- Page config ---
 st.set_page_config(
     page_title="993 Repair Assistant",
-    page_icon="wrench",
+    page_icon="https://raw.githubusercontent.com/appsbilly/porsche-993-assistant/main/static/favicon.png",
     layout="centered",
 )
+
+# --- Open Graph meta tags (link previews in iMessage, Slack, etc.) ---
+st.markdown("""<meta property="og:title" content="993 Repair Assistant" />
+<meta property="og:description" content="Expert repair advice for your Porsche 993 — powered by 20+ years of real forum knowledge from Rennlist, Pelican Parts, 911uk, and more." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://porscherepair.streamlit.app" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="993 Repair Assistant" />
+<meta name="twitter:description" content="Expert repair advice for your Porsche 993 — powered by 20+ years of real forum knowledge." />""", unsafe_allow_html=True)
 
 # --- Rennlist-Inspired Design System CSS ---
 # Tokens:
