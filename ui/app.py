@@ -1023,8 +1023,8 @@ with st.sidebar:
         <div class="card-body">
             <p class="card-value">{car_line}</p>
             {miles_line}
-            <p class="card-label">Knowledge base</p>
-            <p class="card-value">{chunk_count:,} chunks indexed</p>
+            <p class="card-label">Knowledge from</p>
+            <p class="card-value">{chunk_count:,} posts &middot; 20+ years</p>
             <p class="card-sources">
                 Pelican Parts &middot; Rennlist &middot; 911uk &middot; 6SpeedOnline &middot; TIPEC &middot; Carpokes &middot; YouTube
             </p>
