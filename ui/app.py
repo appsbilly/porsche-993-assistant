@@ -584,7 +584,11 @@ except Exception:
         st.error("Authentication is not configured. Check your `[auth]` secrets.")
         st.stop()
 
-if not _is_logged_in:
+# Guest mode flag (persists across reruns within a session)
+if "guest_mode" not in st.session_state:
+    st.session_state.guest_mode = False
+
+if not _is_logged_in and not st.session_state.guest_mode:
     # --- Landing page ---
     st.markdown("""
     <div class="landing-header">
@@ -602,10 +606,13 @@ if not _is_logged_in:
     with col2:
         st.button("Sign in with Google", on_click=st.login,
                   use_container_width=True, type="primary")
+        if st.button("Continue as guest", use_container_width=True):
+            st.session_state.guest_mode = True
+            st.rerun()
 
     st.markdown("""
         <p class="landing-footer">
-            Sign in to save your chat history and get advice tailored to your car.
+            Sign in to save your chat history, or try it out as a guest.
         </p>
         <div class="landing-stats">
             <div class="landing-stat">
@@ -625,9 +632,14 @@ if not _is_logged_in:
     """, unsafe_allow_html=True)
     st.stop()
 
-# --- User is authenticated ---
-if _DEV_MODE:
-    user_email = "dev@localhost"
+# --- Determine identity ---
+_GUEST = st.session_state.guest_mode and not _is_logged_in
+
+if _GUEST:
+    user_id = None
+    display_name = "Guest"
+elif _DEV_MODE:
+    user_id = user_id_from_email("dev@localhost")
     display_name = "Developer"
 else:
     try:
@@ -650,15 +662,20 @@ else:
             st.logout()
         st.stop()
 
-user_id = user_id_from_email(user_email)
+    user_id = user_id_from_email(user_email)
 
 
 # ======================================================================
 # CAR PROFILE ONBOARDING
 # ======================================================================
 
+_DEFAULT_PROFILE = {"year": "", "model": "", "transmission": "", "mileage": "", "known_issues": ""}
+
 if "car_profile" not in st.session_state:
-    if _DEV_MODE:
+    if _GUEST:
+        # Guests get a blank profile — no S3 load, skip onboarding
+        st.session_state.car_profile = dict(_DEFAULT_PROFILE)
+    elif _DEV_MODE:
         # In dev mode, use a default profile so we can preview the main UI
         st.session_state.car_profile = {
             "year": "1997",
@@ -724,7 +741,8 @@ def _show_onboarding():
                 "mileage": mileage.strip(),
                 "known_issues": known_issues.strip(),
             }
-            save_user_profile(user_id, profile)
+            if user_id:
+                save_user_profile(user_id, profile)
             st.session_state.car_profile = profile
             return True
 
@@ -785,7 +803,8 @@ def _show_edit_profile():
                 "mileage": mileage.strip(),
                 "known_issues": known_issues.strip(),
             }
-            save_user_profile(user_id, updated)
+            if user_id:
+                save_user_profile(user_id, updated)
             st.session_state.car_profile = updated
             st.session_state.show_edit_profile = False
             st.rerun()
@@ -795,11 +814,15 @@ def _show_edit_profile():
             st.rerun()
 
 
-# If no profile yet, show onboarding and stop
-if st.session_state.car_profile is None:
+# If no profile yet, show onboarding and stop (guests skip this)
+if st.session_state.car_profile is None and not _GUEST:
     if _show_onboarding():
         st.rerun()
     st.stop()
+
+# Ensure guests always have a profile dict
+if st.session_state.car_profile is None:
+    st.session_state.car_profile = dict(_DEFAULT_PROFILE)
 
 car_profile = st.session_state.car_profile
 
@@ -878,108 +901,109 @@ with st.sidebar:
 
     st.divider()
 
-    # --- Conversation list ---
-    today = datetime.now().date()
-    yesterday = today - timedelta(days=1)
-    week_ago = today - timedelta(days=7)
+    # --- Conversation list (signed-in users only) ---
+    if user_id:
+        today = datetime.now().date()
+        yesterday = today - timedelta(days=1)
+        week_ago = today - timedelta(days=7)
 
-    conversations = sorted(
-        st.session_state.conv_index,
-        key=lambda c: c.get("updated_at", ""),
-        reverse=True,
-    )
+        conversations = sorted(
+            st.session_state.conv_index,
+            key=lambda c: c.get("updated_at", ""),
+            reverse=True,
+        )
 
-    groups = {"Today": [], "Yesterday": [], "This week": [], "Older": []}
-    for conv in conversations:
-        try:
-            conv_date = datetime.fromisoformat(conv["updated_at"]).date()
-            if conv_date == today:
-                groups["Today"].append(conv)
-            elif conv_date == yesterday:
-                groups["Yesterday"].append(conv)
-            elif conv_date >= week_ago:
-                groups["This week"].append(conv)
-            else:
+        groups = {"Today": [], "Yesterday": [], "This week": [], "Older": []}
+        for conv in conversations:
+            try:
+                conv_date = datetime.fromisoformat(conv["updated_at"]).date()
+                if conv_date == today:
+                    groups["Today"].append(conv)
+                elif conv_date == yesterday:
+                    groups["Yesterday"].append(conv)
+                elif conv_date >= week_ago:
+                    groups["This week"].append(conv)
+                else:
+                    groups["Older"].append(conv)
+            except (KeyError, ValueError):
                 groups["Older"].append(conv)
-        except (KeyError, ValueError):
-            groups["Older"].append(conv)
 
-    for label, convs in groups.items():
-        if not convs:
-            continue
-        st.caption(label)
-        for conv in convs:
-            conv_id = conv["id"]
-            is_active = conv_id == st.session_state.current_conv_id
-            title = conv.get("title", "Untitled")
-
-            # Delete confirmation
-            if st.session_state.confirm_delete == conv_id:
-                st.warning(f"Delete **{title}**?")
-                dc1, dc2 = st.columns(2)
-                with dc1:
-                    if st.button("Delete", key=f"yes_{conv_id}", use_container_width=True):
-                        st.session_state.conv_index = delete_conversation(
-                            conv_id, st.session_state.conv_index, user_id=user_id
-                        )
-                        if st.session_state.current_conv_id == conv_id:
-                            st.session_state.current_conv_id = None
-                            st.session_state.messages = []
-                        st.session_state.confirm_delete = None
-                        st.rerun()
-                with dc2:
-                    if st.button("Cancel", key=f"no_{conv_id}", use_container_width=True):
-                        st.session_state.confirm_delete = None
-                        st.rerun()
+        for label, convs in groups.items():
+            if not convs:
                 continue
+            st.caption(label)
+            for conv in convs:
+                conv_id = conv["id"]
+                is_active = conv_id == st.session_state.current_conv_id
+                title = conv.get("title", "Untitled")
 
-            # Rename inline
-            if st.session_state.editing_conv_id == conv_id:
-                new_title = st.text_input(
-                    "Rename", value=title,
-                    key=f"rename_{conv_id}", label_visibility="collapsed",
-                )
-                rc1, rc2 = st.columns(2)
-                with rc1:
-                    if st.button("Save", key=f"save_{conv_id}", use_container_width=True):
-                        if new_title.strip():
-                            for c in st.session_state.conv_index:
-                                if c["id"] == conv_id:
-                                    c["title"] = new_title.strip()
-                                    break
-                            save_index(st.session_state.conv_index, user_id=user_id)
-                        st.session_state.editing_conv_id = None
-                        st.rerun()
-                with rc2:
-                    if st.button("Cancel", key=f"cancel_{conv_id}", use_container_width=True):
-                        st.session_state.editing_conv_id = None
-                        st.rerun()
-                continue
+                # Delete confirmation
+                if st.session_state.confirm_delete == conv_id:
+                    st.warning(f"Delete **{title}**?")
+                    dc1, dc2 = st.columns(2)
+                    with dc1:
+                        if st.button("Delete", key=f"yes_{conv_id}", use_container_width=True):
+                            st.session_state.conv_index = delete_conversation(
+                                conv_id, st.session_state.conv_index, user_id=user_id
+                            )
+                            if st.session_state.current_conv_id == conv_id:
+                                st.session_state.current_conv_id = None
+                                st.session_state.messages = []
+                            st.session_state.confirm_delete = None
+                            st.rerun()
+                    with dc2:
+                        if st.button("Cancel", key=f"no_{conv_id}", use_container_width=True):
+                            st.session_state.confirm_delete = None
+                            st.rerun()
+                    continue
 
-            # Conversation row
-            cols = st.columns([5, 1])
-            with cols[0]:
-                btn_label = f"{'> ' if is_active else '  '}{title}"
-                if st.button(btn_label, key=f"conv_{conv_id}",
-                             use_container_width=True, disabled=is_active):
-                    loaded = load_conversation(conv_id, user_id=user_id)
-                    if loaded is not None:
-                        st.session_state.current_conv_id = conv_id
-                        st.session_state.messages = loaded
-                        st.session_state.confirm_delete = None
-                        st.session_state.editing_conv_id = None
-                        st.rerun()
+                # Rename inline
+                if st.session_state.editing_conv_id == conv_id:
+                    new_title = st.text_input(
+                        "Rename", value=title,
+                        key=f"rename_{conv_id}", label_visibility="collapsed",
+                    )
+                    rc1, rc2 = st.columns(2)
+                    with rc1:
+                        if st.button("Save", key=f"save_{conv_id}", use_container_width=True):
+                            if new_title.strip():
+                                for c in st.session_state.conv_index:
+                                    if c["id"] == conv_id:
+                                        c["title"] = new_title.strip()
+                                        break
+                                save_index(st.session_state.conv_index, user_id=user_id)
+                            st.session_state.editing_conv_id = None
+                            st.rerun()
+                    with rc2:
+                        if st.button("Cancel", key=f"cancel_{conv_id}", use_container_width=True):
+                            st.session_state.editing_conv_id = None
+                            st.rerun()
+                    continue
 
-            with cols[1]:
-                with st.popover("...", use_container_width=True):
-                    if st.button("Rename", key=f"ren_{conv_id}", use_container_width=True):
-                        st.session_state.editing_conv_id = conv_id
-                        st.rerun()
-                    if st.button("Delete", key=f"del_{conv_id}", use_container_width=True):
-                        st.session_state.confirm_delete = conv_id
-                        st.rerun()
+                # Conversation row
+                cols = st.columns([5, 1])
+                with cols[0]:
+                    btn_label = f"{'> ' if is_active else '  '}{title}"
+                    if st.button(btn_label, key=f"conv_{conv_id}",
+                                 use_container_width=True, disabled=is_active):
+                        loaded = load_conversation(conv_id, user_id=user_id)
+                        if loaded is not None:
+                            st.session_state.current_conv_id = conv_id
+                            st.session_state.messages = loaded
+                            st.session_state.confirm_delete = None
+                            st.session_state.editing_conv_id = None
+                            st.rerun()
 
-    st.divider()
+                with cols[1]:
+                    with st.popover("...", use_container_width=True):
+                        if st.button("Rename", key=f"ren_{conv_id}", use_container_width=True):
+                            st.session_state.editing_conv_id = conv_id
+                            st.rerun()
+                        if st.button("Delete", key=f"del_{conv_id}", use_container_width=True):
+                            st.session_state.confirm_delete = conv_id
+                            st.rerun()
+
+        st.divider()
 
     # --- Car info card (Rennlist thead-style) ---
     car_year = car_profile.get("year", "")
@@ -1018,12 +1042,19 @@ with st.sidebar:
 
     st.divider()
 
-    # User info + logout
-    first_name = display_name.split()[0] if display_name else user_email
-    st.markdown(f'<p class="user-info">Signed in as <strong>{first_name}</strong></p>', unsafe_allow_html=True)
-    if not _DEV_MODE:
-        if st.button("Sign out", use_container_width=True):
-            st.logout()
+    # User info + logout / Guest sign-in prompt
+    if _GUEST:
+        st.markdown('<p class="user-info">Browsing as <strong>Guest</strong></p>', unsafe_allow_html=True)
+        st.caption("Sign in to save your chats")
+        if st.button("Sign in with Google", use_container_width=True, type="primary", key="sidebar_login"):
+            st.session_state.guest_mode = False
+            st.login()
+    else:
+        first_name = display_name.split()[0] if display_name else ""
+        st.markdown(f'<p class="user-info">Signed in as <strong>{first_name}</strong></p>', unsafe_allow_html=True)
+        if not _DEV_MODE:
+            if st.button("Sign out", use_container_width=True):
+                st.logout()
 
 
 # ======================================================================
@@ -1127,16 +1158,20 @@ if chat_value:
     image_refs = []
     image_b64_blocks = []
     if uploaded_files:
-        from api.image_utils import process_uploaded_image, image_to_base64, upload_image_to_s3
+        from api.image_utils import process_uploaded_image, image_to_base64
+        if user_id:
+            from api.image_utils import upload_image_to_s3
         for uf in uploaded_files[:3]:  # max 3 images per message
             try:
                 processed, media_type, fname = process_uploaded_image(uf)
-                s3_key = upload_image_to_s3(processed, user_id, fname)
-                image_refs.append({
-                    "s3_key": s3_key,
-                    "media_type": media_type,
-                    "filename": fname,
-                })
+                # Only persist to S3 for signed-in users
+                if user_id:
+                    s3_key = upload_image_to_s3(processed, user_id, fname)
+                    image_refs.append({
+                        "s3_key": s3_key,
+                        "media_type": media_type,
+                        "filename": fname,
+                    })
                 image_b64_blocks.append({
                     "type": "image",
                     "source": {
@@ -1267,21 +1302,23 @@ Please provide a helpful, practical answer based on this knowledge."""
         "content": full_response,
     })
 
-    now = datetime.now().isoformat()
-    if st.session_state.current_conv_id is None:
-        conv_id = new_conversation_id()
-        st.session_state.current_conv_id = conv_id
-        title = generate_title(prompt or "Image analysis")
-        st.session_state.conv_index.append({
-            "id": conv_id, "title": title,
-            "created_at": now, "updated_at": now,
-        })
-    else:
-        for conv in st.session_state.conv_index:
-            if conv["id"] == st.session_state.current_conv_id:
-                conv["updated_at"] = now
-                break
+    # Persist conversations for signed-in users only
+    if user_id:
+        now = datetime.now().isoformat()
+        if st.session_state.current_conv_id is None:
+            conv_id = new_conversation_id()
+            st.session_state.current_conv_id = conv_id
+            title = generate_title(prompt or "Image analysis")
+            st.session_state.conv_index.append({
+                "id": conv_id, "title": title,
+                "created_at": now, "updated_at": now,
+            })
+        else:
+            for conv in st.session_state.conv_index:
+                if conv["id"] == st.session_state.current_conv_id:
+                    conv["updated_at"] = now
+                    break
 
-    save_index(st.session_state.conv_index, user_id=user_id)
-    save_conversation(st.session_state.current_conv_id, st.session_state.messages, user_id=user_id)
+        save_index(st.session_state.conv_index, user_id=user_id)
+        save_conversation(st.session_state.current_conv_id, st.session_state.messages, user_id=user_id)
     st.rerun()
