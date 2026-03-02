@@ -1121,11 +1121,13 @@ if car_profile.get("transmission"):
 if car_profile.get("mileage"):
     car_badge_text += f" &middot; ~{car_profile['mileage']} mi"
 
+car_badge_html = f'<span class="app-car-tag">{car_badge_text.strip()}</span>' if car_badge_text.strip() else ""
+
 st.markdown(f"""
 <div class="app-header">
     <div class="app-header-title">993 Repair Assistant</div>
     <p class="app-header-sub">Ask anything about your Porsche 993 &mdash; powered by real forum knowledge.</p>
-    <span class="app-car-tag">{car_badge_text.strip()}</span>
+    {car_badge_html}
 </div>
 """, unsafe_allow_html=True)
 
