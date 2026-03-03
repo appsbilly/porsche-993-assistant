@@ -619,12 +619,13 @@ st.markdown("""
 
 from api.auth import user_id_from_email, load_user_profile, save_user_profile
 
-# Dev mode: bypass auth when [auth] secrets aren't configured (local development)
+# Dev mode: bypass auth ONLY when running locally (never on Streamlit Cloud)
 _DEV_MODE = False
+_is_on_cloud = os.getenv("STREAMLIT_SHARING_MODE") or os.getenv("STREAMLIT_SERVER_ADDRESS")
 try:
     _is_logged_in = st.user.is_logged_in
 except Exception:
-    if os.getenv("DEV_MODE", "").lower() in ("1", "true", "yes"):
+    if not _is_on_cloud and os.getenv("DEV_MODE", "").lower() in ("1", "true", "yes"):
         _DEV_MODE = True
         _is_logged_in = True
     else:
@@ -1200,6 +1201,15 @@ if chat_value:
 
     if not prompt.strip() and not uploaded_files:
         st.stop()
+
+    # Rate limiting for guests (30 queries per session)
+    if _GUEST:
+        if "guest_query_count" not in st.session_state:
+            st.session_state.guest_query_count = 0
+        st.session_state.guest_query_count += 1
+        if st.session_state.guest_query_count > 30:
+            st.warning("You've hit the guest limit (30 questions per session). Sign in to continue chatting!")
+            st.stop()
 
     # Process uploaded images
     image_refs = []

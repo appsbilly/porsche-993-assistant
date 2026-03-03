@@ -10,6 +10,7 @@ S3 layout:
 
 import os
 import json
+import hashlib
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -32,11 +33,14 @@ def _bucket():
 
 
 def user_id_from_email(email: str) -> str:
-    """Convert email to a safe S3 key prefix.
+    """Convert email to a safe, non-guessable S3 key prefix.
 
-    Replaces @ and dots to avoid ambiguity, but keeps it readable.
+    Uses SHA-256 hash so S3 paths can't be derived from knowing
+    someone's email address. Truncated to 16 hex chars (64-bit)
+    which is plenty for user namespacing.
     """
-    return email.lower().replace("@", "_at_").replace(".", "_")
+    normalized = email.strip().lower()
+    return hashlib.sha256(normalized.encode()).hexdigest()[:16]
 
 
 # ---------------------------------------------------------------------------
