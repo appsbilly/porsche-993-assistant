@@ -19,7 +19,7 @@ INDEX_NAME = "porsche-993"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 # How many chunks to retrieve per query
-TOP_K = 15
+TOP_K = 10
 
 # Porsche part number pattern: 993.116.015.04 or 993-116-015-04
 PART_NUMBER_RE = re.compile(r'\b(\d{3}[\.\-]\d{3}[\.\-]\d{3}[\.\-]\d{2})\b')
@@ -124,6 +124,11 @@ RULES:
 12. Do NOT call forum posters or blog authors "experts". They are owners sharing
     their experience. Say "an owner on Rennlist" or "a forum member", not
     "a Rennlist expert" or "an expert on Pelican Parts".
+13. Be concise. Answer the question directly without filler or preamble. Short
+    questions deserve short answers. Longer, more complex questions can get
+    longer answers — but never pad a response for length. Never sacrifice
+    accuracy or completeness for brevity — if a thorough answer is needed,
+    give one.
 
 When you reference source material, mention the source forum and thread topic
 so the user can look it up for more detail."""
@@ -337,6 +342,8 @@ def search(query: str, n_results: int = TOP_K) -> list[dict]:
     return sources
 
 
+MAX_SOURCE_CHARS = 6000  # ~1,500 tokens per source
+
 def build_context(sources: list[dict]) -> str:
     """Format retrieved sources into context for Claude."""
     context_parts = []
@@ -344,7 +351,8 @@ def build_context(sources: list[dict]) -> str:
         header = f"[Source {i}] {src['title']}"
         if src['source']:
             header += f" ({src['source']})"
-        context_parts.append(f"{header}\n{src['text']}")
+        text = src['text'][:MAX_SOURCE_CHARS]
+        context_parts.append(f"{header}\n{text}")
 
     return "\n\n" + "=" * 60 + "\n\n".join(context_parts)
 
