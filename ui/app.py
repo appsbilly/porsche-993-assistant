@@ -27,23 +27,16 @@ st.set_page_config(
     layout="centered",
 )
 
-# --- Open Graph meta tags (link previews in iMessage, Slack, etc.) ---
-st.markdown("""<meta property="og:title" content="993 Repair Assistant" />
-<meta property="og:description" content="Expert repair advice for your Porsche 993 — powered by 20+ years of real forum knowledge from Rennlist, Pelican Parts, 911uk, and more." />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="https://porscherepair.streamlit.app" />
-<meta name="twitter:card" content="summary" />
-<meta name="twitter:title" content="993 Repair Assistant" />
-<meta name="twitter:description" content="Expert repair advice for your Porsche 993 — powered by 20+ years of real forum knowledge." />""", unsafe_allow_html=True)
-
-# --- Rennlist-Inspired Design System CSS ---
+# --- Open Graph meta tags + Rennlist-Inspired Design System CSS ---
+# Meta tags and CSS combined in one st.markdown call to prevent
+# Streamlit from rendering raw HTML as visible text.
 # Tokens:
 #   Palette: Rennlist forum DNA (#677887 slate, #36576f header, #a62a2a brick-red hover)
 #   Spacing base: 4px  |  Scale: 4, 8, 12, 16, 24, 32, 48
 #   Depth: borders-only (1px solid, no shadows)
 #   Radius: 3px everywhere (forum-utilitarian)
 #   Font: Verdana  |  Sizes: 11px labels, 13px body, 14px subhead, 18px title
-st.markdown("""
+st.markdown("""<div style="display:none"><meta property="og:title" content="993 Repair Assistant" /><meta property="og:description" content="Expert repair advice for your Porsche 993 — powered by 20+ years of real forum knowledge from Rennlist, Pelican Parts, 911uk, and more." /><meta property="og:type" content="website" /><meta property="og:url" content="https://porscherepair.streamlit.app" /><meta name="twitter:card" content="summary" /><meta name="twitter:title" content="993 Repair Assistant" /><meta name="twitter:description" content="Expert repair advice for your Porsche 993 — powered by 20+ years of real forum knowledge." /></div>
 <style>
     /* ====== DESIGN TOKENS ====== */
     :root {
